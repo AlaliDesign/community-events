@@ -6,42 +6,53 @@ import os
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق (التوسيط المطلق وتكبير الخط) ---
+# --- 2. التنسيق (التوسيط القسري وتكبير الشعار) ---
 st.markdown("""
     <style>
     .main { background-color: #080808; }
     
-    /* توسيط الشعار بشكل قسري */
-    .stImage {
+    /* حاوية الشعار لضمان التوسط وتكبير الحجم */
+    .logo-container {
         display: flex;
-        justify-content: center;
-        margin-bottom: -10px;
+        justify-content: center; /* توسيط أفقي */
+        align-items: center;    /* توسيط عمودي */
+        width: 100%;
+        padding: 20px 0;
+    }
+    
+    .logo-container img {
+        width: 180px !important; /* تكبير الشعار ليكون واضحاً جداً */
+        height: auto;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .main-title { 
         color: #D4AF37; 
         text-align: center; 
-        font-size: 1.5em !important; 
+        font-size: 1.6em !important; 
         font-weight: bold;
-        margin-top: 15px;
+        margin-top: 10px;
         margin-bottom: 25px;
+        text-shadow: 1px 1px 2px black;
     }
     
     /* تنسيق العدادات */
     [data-testid="stMetric"] {
         background-color: #fdfdfd; 
         border: 1px solid #D4AF37;
-        padding: 10px !important;
-        border-radius: 8px;
+        padding: 12px !important;
+        border-radius: 10px;
         text-align: center;
     }
     
-    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.2em !important; font-weight: bold !important; }
+    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.3em !important; font-weight: bold !important; }
 
     .stButton>button { 
-        border-radius: 10px; border: 1.5px solid #D4AF37; 
+        border-radius: 12px; border: 2px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
-        font-weight: bold; width: 100%; height: 3.5em;
+        font-weight: bold; width: 100%; height: 3.8em;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -71,15 +82,19 @@ def load_results():
 if 'input_key' not in st.session_state:
     st.session_state.input_key = 0
 
-# --- 4. واجهة العرض (الشعار والعناوين) ---
+# --- 4. عرض الشعار (النسخة المكبرة والمتوسطة) ---
 
-# عرض الشعار في المنتصف باستخدام حاوية الأعمدة لضمان التوسيط
-col_a, col_logo, col_b = st.columns([1, 2, 1])
-with col_logo:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=140)
-    else:
-        st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
+# استخدام HTML لضمان التوسط المطلق وتجاوز إعدادات ستريمليت الافتراضية
+if os.path.exists("logo.png"):
+    st.markdown(f"""
+        <div class="logo-container">
+            <img src="https://raw.githubusercontent.com/{st.secrets.get('GITHUB_USER', 'YourUser')}/{st.secrets.get('REPO_NAME', 'YourRepo')}/main/logo.png" alt="Logo">
+        </div>
+        """, unsafe_allow_html=True)
+    # في حال لم يعمل الرابط أعلاه، نستخدم الطريقة التقليدية كاحتياط
+    st.image("logo.png", width=180) 
+else:
+    st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
 
 st.markdown("<div class='main-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
 
@@ -112,47 +127,48 @@ if names_list:
 
 st.divider()
 
-# --- 6. الإحصائيات (عداد الفرز العام) ---
+# --- 6. الإحصائيات الشاملة ---
 df_results = load_results()
-total_in_list = len(names_list) # إجمالي المضافين في الإكسل
-total_responded = len(df_results) # من سجلوا (حضور أو اعتذار)
+total_in_list = len(names_list)
+total_responded = len(df_results)
 
-st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 إحصائيات المناسبة</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 إحصائيات الفرز العام</h3>", unsafe_allow_html=True)
 
-# العدادات الأربعة
 c1, c2 = st.columns(2)
-with c1: st.metric("إجمالي المضافين (القائمة)", total_in_list)
-with c2: st.metric("إجمالي المتفاعلين", total_responded)
+with c1: st.metric("إجمالي الأسماء المضافة", total_in_list)
+with c2: st.metric("إجمالي من سجلوا", total_responded)
 
 c3, c4 = st.columns(2)
 with c3: st.metric("✅ عدد الحضور", len(df_results[df_results['الحالة'] == 'حاضر']))
 with c4: st.metric("❌ عدد المعتذرين", len(df_results[df_results['الحالة'] == 'معتذر']))
 
-# --- 7. الإدارة ---
+# --- 7. مركز تحكم الإدارة ---
 with st.expander("⚙️ إعدادات الإدارة"):
-    admin_pass = st.text_input("الرقم السري:", type="password")
+    admin_pass = st.text_input("الرقم السري للإدارة:", type="password")
     if admin_pass == "1234":
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
+        tab1, tab2, tab3 = st.tabs(["➕ إضافة شخص", "🗑️ حذف شخص", "🧹 تصفير الكشف"])
         with tab1:
-            new_person = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
-            if st.button("حفظ الاسم"):
+            new_person = st.text_input("الاسم الكامل:", key=f"ins_{st.session_state.input_key}")
+            if st.button("حفظ وإضافة"):
                 if new_person:
                     clean_n = new_person.strip()
                     if clean_n not in st.session_state.names:
                         st.session_state.names.append(clean_n)
                         save_names(sorted(st.session_state.names))
                         st.session_state.input_key += 1
+                        st.success(f"تمت إضافة {clean_n} للقائمة")
                         st.rerun()
         with tab2:
-            to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
+            to_del = st.selectbox("اختر الاسم لحذفه:", options=["-- اختر --"] + st.session_state.names)
             if st.button("تأكيد الحذف النهائي"):
                 if to_del != "-- اختر --":
                     st.session_state.names.remove(to_del)
                     save_names(st.session_state.names)
                     st.rerun()
         with tab3:
-            if st.button("تصفير كشف الحضور"):
-                if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
-                st.rerun()
+            if st.button("تصفير كشف الحضور الحالي"):
+                if os.path.exists(CSV_RESULTS): 
+                    os.remove(CSV_RESULTS)
+                    st.rerun()
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.8em; margin-top:50px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#555; font-size:0.85em; margin-top:50px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
