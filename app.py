@@ -98,4 +98,4 @@ if os.path.exists(EXCEL_FILE):
 else:
     st.error("ملف names.xlsx غير موجود.")
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.7em; margin-top:30px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#555; font-size:0.7em; margin-top:30px;'>تصميم وبرمجة: العلالي للبرمجة 2026</p>", unsafe_allow_html=True)
