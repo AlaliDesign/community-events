@@ -23,8 +23,10 @@ CSV_RESULTS = 'community_events_results.csv'
 
 def load_names():
     if os.path.exists(EXCEL_FILE):
-        df = pd.read_excel(EXCEL_FILE)
-        return sorted(df.iloc[:, 0].dropna().unique().tolist())
+        try:
+            df = pd.read_excel(EXCEL_FILE)
+            return sorted(df.iloc[:, 0].dropna().unique().tolist())
+        except: return []
     return []
 
 def save_names(names_list):
@@ -37,10 +39,6 @@ def load_results():
         except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# دالة مسح حقل الإضافة
-def clear_text():
-    st.session_state["new_name_input"] = ""
-
 # --- 4. واجهة التطبيق الرئيسية ---
 if os.path.exists("logo.png"):
     col_logo, _ = st.columns([1, 3])
@@ -48,7 +46,11 @@ if os.path.exists("logo.png"):
 
 st.markdown("<div class='main-title'>⚜️ مناسبات جماعة آل علي بالرياض ⚜️</div>", unsafe_allow_html=True)
 
-names_list = load_names()
+# تحميل الأسماء في الذاكرة
+if 'names' not in st.session_state:
+    st.session_state.names = load_names()
+
+names_list = st.session_state.names
 
 if names_list:
     selected_name = st.selectbox("🔍 ابحث عن اسمك:", options=["-- اختر من القائمة --"] + names_list)
@@ -83,42 +85,41 @@ if not df_final.empty:
     with st.expander("👁️ عرض كشف الأسماء"):
         st.dataframe(df_final, use_container_width=True, hide_index=True)
 
-# --- 6. مركز تحكم الإدارة (تحديث: ميزة تفريغ الحقل) ---
+# --- 6. مركز تحكم الإدارة (الإصدار المستقر) ---
 st.write("---")
-with st.expander("⚙️ إعدادات الإدارة المتطورة"):
+with st.expander("⚙️ إعدادات الإدارة"):
     admin_pass = st.text_input("أدخل الرقم السري للإدارة:", type="password")
     
     if admin_pass == "1234":
         tab1, tab2, tab3 = st.tabs(["➕ إضافة اسم", "🗑️ حذف اسم", "🧹 تصفير"])
         
         with tab1:
-            # استخدام key و Session State لتفريغ الحقل
-            new_person = st.text_input("اكتب الاسم الجديد بالكامل:", key="new_name_input")
+            # طريقة الإضافة المستقرة (بدون فورم لتجنب تضارب التحديث)
+            new_person = st.text_input("اكتب الاسم الجديد بالكامل:", key="input_field")
             if st.button("حفظ الاسم الجديد"):
-                if new_person and new_person not in names_list:
-                    names_list.append(new_person)
-                    save_names(names_list)
-                    st.success(f"تمت إضافة {new_person}")
-                    # هنا نقوم بتفريغ الحقل ثم إعادة التشغيل
-                    st.session_state["new_name_input"] = "" 
+                if new_person and new_person not in st.session_state.names:
+                    st.session_state.names.append(new_person)
+                    save_names(st.session_state.names)
+                    st.success(f"تمت إضافة {new_person} بنجاح!")
+                    # التحديث الآن يتم بسلاسة
                     st.rerun()
-                elif new_person in names_list:
+                elif new_person in st.session_state.names:
                     st.warning("الاسم موجود مسبقاً!")
         
         with tab2:
-            name_to_del = st.selectbox("اختر الاسم المراد حذفه نهائياً:", options=["-- اختر --"] + names_list)
+            name_to_del = st.selectbox("اختر الاسم المراد حذفه:", options=["-- اختر --"] + st.session_state.names)
             if st.button("تأكيد حذف الاسم"):
                 if name_to_del != "-- اختر --":
-                    names_list.remove(name_to_del)
-                    save_names(names_list)
+                    st.session_state.names.remove(name_to_del)
+                    save_names(st.session_state.names)
                     st.error(f"تم حذف {name_to_del}")
                     st.rerun()
                     
         with tab3:
-            if st.button("🗑️ تصفير قائمة الحضور الحالية"):
+            if st.button("🗑️ تصفير قائمة الحضور"):
                 if os.path.exists(CSV_RESULTS):
                     os.remove(CSV_RESULTS)
-                    st.success("تم التصفير بنجاح")
+                    st.success("تم التصفير")
                     st.rerun()
     elif admin_pass != "":
         st.error("الرقم السري خطأ")
