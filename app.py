@@ -37,6 +37,10 @@ def load_results():
         except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
+# دالة مسح حقل الإضافة
+def clear_text():
+    st.session_state["new_name_input"] = ""
+
 # --- 4. واجهة التطبيق الرئيسية ---
 if os.path.exists("logo.png"):
     col_logo, _ = st.columns([1, 3])
@@ -79,7 +83,7 @@ if not df_final.empty:
     with st.expander("👁️ عرض كشف الأسماء"):
         st.dataframe(df_final, use_container_width=True, hide_index=True)
 
-# --- 6. مركز تحكم الإدارة (إضافة/حذف أسماء + تصفير) ---
+# --- 6. مركز تحكم الإدارة (تحديث: ميزة تفريغ الحقل) ---
 st.write("---")
 with st.expander("⚙️ إعدادات الإدارة المتطورة"):
     admin_pass = st.text_input("أدخل الرقم السري للإدارة:", type="password")
@@ -88,13 +92,18 @@ with st.expander("⚙️ إعدادات الإدارة المتطورة"):
         tab1, tab2, tab3 = st.tabs(["➕ إضافة اسم", "🗑️ حذف اسم", "🧹 تصفير"])
         
         with tab1:
-            new_name = st.text_input("اكتب الاسم الجديد بالكامل:")
+            # استخدام key و Session State لتفريغ الحقل
+            new_person = st.text_input("اكتب الاسم الجديد بالكامل:", key="new_name_input")
             if st.button("حفظ الاسم الجديد"):
-                if new_name and new_name not in names_list:
-                    names_list.append(new_name)
+                if new_person and new_person not in names_list:
+                    names_list.append(new_person)
                     save_names(names_list)
-                    st.success(f"تمت إضافة {new_name} للقائمة")
+                    st.success(f"تمت إضافة {new_person}")
+                    # هنا نقوم بتفريغ الحقل ثم إعادة التشغيل
+                    st.session_state["new_name_input"] = "" 
                     st.rerun()
+                elif new_person in names_list:
+                    st.warning("الاسم موجود مسبقاً!")
         
         with tab2:
             name_to_del = st.selectbox("اختر الاسم المراد حذفه نهائياً:", options=["-- اختر --"] + names_list)
@@ -102,7 +111,7 @@ with st.expander("⚙️ إعدادات الإدارة المتطورة"):
                 if name_to_del != "-- اختر --":
                     names_list.remove(name_to_del)
                     save_names(names_list)
-                    st.error(f"تم حذف {name_to_del} من القائمة")
+                    st.error(f"تم حذف {name_to_del}")
                     st.rerun()
                     
         with tab3:
@@ -114,4 +123,4 @@ with st.expander("⚙️ إعدادات الإدارة المتطورة"):
     elif admin_pass != "":
         st.error("الرقم السري خطأ")
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.7em;'>تصميم: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#555; font-size:0.7em;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
