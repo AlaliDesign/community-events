@@ -7,22 +7,22 @@ import urllib.parse
 from ummalqura.hijri_date import HijriDate
 from PIL import Image
 
-# --- 1. إعدادات الصفحة والأيقونة (شعار logo.png) ---
+# --- 1. إعدادات الصفحة والأيقونة ---
 icon_path = 'logo.png'
+# رابط الصورة المباشر الذي وضعته أنت
+image_url = "https://i.ibb.co/Pv2TzzCj/logo.png"
 
-# محاولة وضع الصورة كأيقونة للمتصفح وللجوال
 if os.path.exists(icon_path):
     try:
         img = Image.open(icon_path)
         st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon=img)
-      st.markdown(f'<link rel="apple-touch-icon" href="https://i.ibb.co/Pv2TzzCj/logo.png" alt="logo">', unsafe_allow_html=True)
-
-  # كود إضافي لإجبار الجوال على التعرف على الأيقونة عند الحفظ
-        st.markdown(f'<link rel="apple-touch-icon" href="{icon_path}"><link rel="shortcut icon" href="{icon_path}">', unsafe_allow_html=True)
     except:
         st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
 else:
     st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
+
+# هذا هو السطر الذي سبب المشكلة، وضعتُه لك الآن بمسافة صحيحة تماماً
+st.markdown(f'<link rel="apple-touch-icon" href="{image_url}">', unsafe_allow_html=True)
 
 # --- 2. وظائف البيانات ---
 def load_data():
@@ -82,9 +82,7 @@ st.markdown("""
 
 all_names, df_results, settings = load_data()
 
-# --- 4. واجهة العرض (الكليشة الثابتة) ---
-
-# الشعار
+# --- 4. واجهة العرض ---
 col_l, col_m, col_r = st.columns([1, 1.5, 1])
 with col_m:
     if os.path.exists(icon_path):
@@ -92,10 +90,8 @@ with col_m:
     else:
         st.markdown("<div style='text-align:center; font-size:40px;'>🌴⚔️</div>", unsafe_allow_html=True)
 
-# العنوان الثابت
 st.markdown("<h3 style='text-align:center; color:#1a1a1a; font-weight:bold;'>مناسبات جماعة آل علي في الرياض</h3>", unsafe_allow_html=True)
 
-# بطاقة التفاصيل
 st.markdown(f"""
     <div class="event-card">
         <p style="font-size:1.2em;">📅 <b>التاريخ الهجري:</b> {settings['h_date']}</p>
@@ -103,7 +99,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# أزرار التذكير والخرائط
 if settings['h_date'] != "لم يحدد":
     try:
         hy, hm, hd = map(int, settings['h_date'].split('-'))
