@@ -19,7 +19,7 @@ def load_data():
         try: results = pd.read_csv('results.csv', encoding='utf-8-sig')
         except: pass
         
-    settings = {"title": "مناسبات آل علي", "date": "2026-05-15", "time": "08:00 PM", "location": "الرياض", "map_url": ""}
+    settings = {"title": "مناسبات آل علي", "date": "2026-05-15", "time": "08:30 PM", "location": "الرياض", "map_url": ""}
     if os.path.exists('settings.json'):
         try:
             with open('settings.json', 'r', encoding='utf-8') as f: settings = json.load(f)
@@ -36,34 +36,29 @@ st.markdown("""
         border-radius: 15px; background-color: #ffffff;
         max-width: 95% !important; margin: auto;
     }
-    /* تنسيق زر التذكير الجديد */
-    .reminder-link {
-        display: block;
-        background-color: #D4AF37;
-        color: white !important;
-        text-align: center;
-        padding: 15px;
-        text-decoration: none;
-        border-radius: 10px;
-        font-weight: bold;
-        font-size: 1.1em;
-        margin: 15px 0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .reminder-link:hover { background-color: #B8860B; }
-    
     .event-card {
         background-color: #FFFDF5; border: 1px double #D4AF37;
         border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;
     }
-    div[data-testid="stMetric"] {
-        background-color: #FFFDF5 !important; border: 1px solid #D4AF37 !important;
-        border-radius: 10px !important; padding: 10px !important;
+    /* تنسيق زر الروابط */
+    div.stLinkButton > a {
+        background-color: #D4AF37 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        width: 100% !important;
+        display: block !important;
+        font-weight: bold !important;
+        padding: 10px !important;
     }
     .stButton>button { 
         border-radius: 10px; border: 2px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
         font-weight: bold; width: 100%; height: 3.5em;
+    }
+    div[data-testid="stMetric"] {
+        background-color: #FFFDF5 !important; border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important; padding: 10px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -75,22 +70,28 @@ st.markdown(f"<h3 style='text-align:center; color:#D4AF37;'>{settings['title']}<
 
 # تحضير رابط التقويم
 title_q = urllib.parse.quote(settings['title'])
-date_q = settings['date'].replace("-", "")
+# تنظيف التاريخ ليكون أرقام فقط (YYYYMMDD)
+date_clean = settings['date'].replace("-", "").replace("/", "")
 loc_q = urllib.parse.quote(settings['location'])
-cal_url = f"https://www.google.com/calendar/render?action=TEMPLATE&text={title_q}&dates={date_q}T170000Z/{date_q}T210000Z&details=ننتظركم+بكل+حب&location={loc_q}"
+cal_url = f"https://www.google.com/calendar/render?action=TEMPLATE&text={title_q}&dates={date_clean}T170000Z/{date_clean}T210000Z&details=تذكير+بالمناسبة&location={loc_q}"
 
-st.markdown(f"""
-    <div class="event-card">
-        <p style="font-size:1.1em;">📅 <b>التاريخ:</b> {settings['date']} | ⏰ <b>الوقت:</b> {settings['time']}</p>
-        <p>📍 <b>الموقع:</b> {settings['location']}</p>
-        
-        <a href="{cal_url}" target="_blank" class="reminder-link">🔔 أضف تذكير (تنبيه صوتي بجوالك)</a>
-        
-        <a href="{settings['map_url']}" target="_blank" style="color:#D4AF37; font-weight:bold; text-decoration:none;">📍 فتح الخريطة</a>
-    </div>
-""", unsafe_allow_html=True)
+# عرض بطاقة المناسبة
+with st.container():
+    st.markdown(f"""
+        <div class="event-card">
+            <p style="font-size:1.1em;">📅 <b>التاريخ:</b> {settings['date']} | ⏰ <b>الوقت:</b> {settings['time']}</p>
+            <p>📍 <b>الموقع:</b> {settings['location']}</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # استخدام زر الرابط الرسمي لضمان الظهور
+    st.link_button("🔔 أضف تذكير (تنبيه صوتي بجوالك)", cal_url, use_container_width=True)
+    
+    if settings['map_url']:
+        st.link_button("📍 فتح الموقع في الخرائط", settings['map_url'], use_container_width=True)
 
 # --- 4. تسجيل الحضور ---
+st.divider()
 st.markdown("### 📝 سجل حضورك")
 search_term = st.text_input("🔍 ابحث عن اسمك هنا:", placeholder="اكتب اسمك...")
 filtered = [n for n in all_names if search_term in n] if search_term else all_names
@@ -111,9 +112,8 @@ if selected != "-- اختر --":
             st.warning("تم تسجيل اعتذارك")
             st.rerun()
 
-st.divider()
-
 # --- 5. الإحصائيات والكشف ---
+st.divider()
 c1, c2, c3 = st.columns(3)
 with c1: st.metric("المسجلين", len(all_names))
 with c2: st.metric("حاضر ✅", len(df_results[df_results['الحالة'] == 'حاضر']))
