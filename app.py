@@ -7,28 +7,26 @@ import base64
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. وظيفة تحويل الصورة لرابط مضمون لضمان الظهور ---
+# --- 2. وظيفة تحويل الصورة لرابط مضمون ---
 def get_image_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# --- 3. التنسيق الملكي (إلغاء برواز الشعار + تكبير الصورة) ---
+# --- 3. التنسيق الملكي المطور (تقليص المسافات العلوية) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
     
-    /* إخفاء القوائم الافتراضية */
     #MainMenu, footer, header {visibility: hidden;}
 
-    /* لون الخلفية الكريمي المريح */
     .stApp { background-color: #F5F5DC; }
     
-    /* برواز الصفحة الرئيسي */
+    /* برواز الصفحة الرئيسي مع تقليل الحواف العلوية */
     .main .block-container {
         border: 2px solid #D4AF37;
-        padding: 15px !important;
+        padding: 5px 15px !important; 
         border-radius: 15px;
         background-color: #ffffff;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -36,39 +34,46 @@ st.markdown("""
         max-width: 98% !important;
     }
 
-    .bismillah { font-family: 'Amiri', serif; font-size: 2.2em; color: #1a1a1a; text-align: center; margin-bottom: 10px; }
+    /* البسملة - تقليل الهامش السفلي */
+    .bismillah { 
+        font-family: 'Amiri', serif; 
+        font-size: 2.2em; 
+        color: #1a1a1a; 
+        text-align: center; 
+        margin-bottom: 0px; 
+        padding-bottom: 0px;
+    }
     
-    /* --- تنسيق الشعار (بدون برواز وبحجم كبير جداً) --- */
+    /* إطار الشعار - تقليل الهوامش العلوية والسفلية لرفعه للأعلى */
     .logo-frame {
         display: flex;
         justify-content: center;
         align-items: center;
         width: 100%;
-        margin: 10px 0 25px 0;
+        margin: -10px 0 5px 0; /* هامش علوي سلبي لرفعه باتجاه البسملة */
     }
     .circular-logo {
-        width: 320px !important; /* تكبير الشعار أكثر */
-        height: 320px !important;
-        border-radius: 50% !important; /* يبقى دائرياً */
-        border: none !important; /* إلغاء البرواز الذهبي حول الصورة */
+        width: 300px !important; 
+        height: 300px !important;
+        border-radius: 50% !important;
+        border: none !important;
         object-fit: cover;
-        /* ظل خفيف جداً ليعطي عمقاً دون الحاجة لبرواز */
         filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.15));
     }
 
+    /* الكليشة (العنوان الرئيسي) - تقليل الهامش العلوي لتقريبه من الشعار */
     .main-title { 
         color: #D4AF37; 
         text-align: center; 
         font-size: 1.6em !important; 
         font-family: 'Tajawal', sans-serif; 
         font-weight: bold; 
-        margin-bottom: 25px; 
+        margin-top: -10px; /* تقريب العنوان من الصورة */
+        margin-bottom: 20px; 
     }
     
-    /* تنسيق الإحصائيات */
     [data-testid="stMetric"] { background-color: #FFFDF5; border: 1px solid #D4AF37; border-radius: 10px; text-align: center; }
     
-    /* تنسيق الأزرار */
     .stButton>button { 
         border-radius: 12px; border: 2px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
@@ -105,7 +110,7 @@ if 'input_key' not in st.session_state:
 # --- 5. واجهة العرض الرئيسية ---
 st.markdown("<div class='bismillah'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>", unsafe_allow_html=True)
 
-# عرض الشعار المكبر وبدون برواز
+# عرض الشعار بدون برواز وبمسافات مضغوطة
 img_b64 = get_image_base64("logo.png")
 if img_b64:
     st.markdown(f"""
@@ -133,7 +138,7 @@ if names_list:
                 res = load_results()
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.success(f"تم تأكيد حضورك")
+                st.success("تم تأكيد حضورك")
                 st.rerun()
         with col2:
             if st.button("❌ تقديم اعتذار"):
