@@ -25,28 +25,20 @@ st.markdown(f'<link rel="apple-touch-icon" href="{image_url}">', unsafe_allow_ht
 # --- 2. وظائف البيانات ---
 def load_data():
     names = []
-    # التحقق من وجود ملف الأسماء
+    # محاولة قراءة ملف الأكسل
     if os.path.exists('names.xlsx'):
         try:
             df = pd.read_excel('names.xlsx')
-            # نأخذ العمود الأول وننظفه من الفراغات
+            # نأخذ العمود الأول ونحوله لقائمة
             names = sorted(df.iloc[:, 0].dropna().astype(str).unique().tolist())
-        except Exception as e:
-            st.error(f"خطأ في قراءة ملف الأسماء: {e}")
+        except: pass
     
     results = pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     if os.path.exists('results.csv'):
         try: results = pd.read_csv('results.csv', encoding='utf-8-sig')
         except: pass
         
-    settings = {
-        "title": "مناسبات جماعة آل علي في الرياض", 
-        "h_date": "لم يحدد", 
-        "time": "حدد الوقت", 
-        "location": "حدد الموقع", 
-        "map_url": ""
-    }
-    
+    settings = {"title": "مناسبات جماعة آل علي في الرياض", "h_date": "لم يحدد", "time": "حدد الوقت", "location": "حدد الموقع", "map_url": ""}
     if os.path.exists('settings.json'):
         try:
             with open('settings.json', 'r', encoding='utf-8') as f:
@@ -113,37 +105,40 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 5. سجل الحضور (هنا التعديل) ---
+# --- 5. سجل الحضور (إصلاح القائمة) ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
 
+# إذا لم يجد أسماء، سيظهر لك خيار لكتابة الاسم يدوياً بدلاً من الاختفاء
 if not all_names:
-    st.warning("⚠️ لم يتم العثور على أسماء في ملف names.xlsx. يرجى التأكد من رفع الملف.")
+    st.info("ℹ️ ملاحظة: ملف الأسماء (names.xlsx) غير موجود أو فارغ. يمكنك كتابة اسمك يدوياً أدناه:")
+    selected = st.text_input("اكتب اسمك بالكامل:")
 else:
     search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
     opts = [n for n in all_names if search in n] if search else all_names
     selected = st.selectbox("اختر اسمك من القائمة:", options=["-- اختر --"] + opts)
 
-    if selected != "-- اختر --":
-        ca, cb = st.columns(2)
-        with ca:
-            if st.button("✅ تأكيد الحضور"):
-                new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-                pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-                st.success(f"تم تسجيل حضورك يا {selected}")
-                st.rerun()
-        with cb:
-            if st.button("❌ اعتذار"):
-                new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-                pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-                st.warning(f"تم تسجيل اعتذارك يا {selected}")
-                st.rerun()
+# زر التأكيد والاعتذار (يظهر إذا كان هناك اسم مكتوب أو مختار)
+if selected and selected != "-- اختر --":
+    ca, cb = st.columns(2)
+    with ca:
+        if st.button("✅ تأكيد الحضور"):
+            new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+            st.success(f"تم تسجيل حضورك")
+            st.rerun()
+    with cb:
+        if st.button("❌ اعتذار"):
+            new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+            st.warning(f"تم تسجيل اعتذارك")
+            st.rerun()
 
 # --- 6. الإحصائيات ---
 st.divider()
 st.markdown("<h4 style='text-align:center;'>📊 الإحصائيات</h4>", unsafe_allow_html=True)
 r1, r2, r3 = st.columns(3)
-with r1: st.metric("المسجلين", len(all_names))
+with r1: st.metric("المسجلين", len(all_names) if all_names else "يدوي")
 with r2: st.metric("حاضر ✅", len(df_results[df_results['الحالة'] == 'حاضر']))
 with r3: st.metric("معتذر ❌", len(df_results[df_results['الحالة'] == 'معتذر']))
 
