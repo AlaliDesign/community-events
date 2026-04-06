@@ -60,6 +60,13 @@ st.markdown("""
         background-color: #FFFDF5; border: 1px double #D4AF37;
         border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;
     }
+    /* تنسيق العدادات العلوية */
+    .metric-container {
+        display: flex; justify-content: space-around; margin-bottom: 20px;
+    }
+    .metric-box {
+        text-align: center; padding: 10px; border-radius: 10px; width: 30%; color: white; font-weight: bold;
+    }
     div.stLinkButton > a {
         background-color: #D4AF37 !important; color: white !important;
         border-radius: 10px !important; width: 100% !important; display: block !important;
@@ -84,6 +91,28 @@ with col_m:
 
 st.markdown("<h3 style='text-align:center; color:#1a1a1a; font-weight:bold;'>مناسبات جماعة آل علي في الرياض</h3>", unsafe_allow_html=True)
 
+# --- 5. العدادات الملونة الجديدة ---
+h_count = len(df_results[df_results['الحالة'] == 'حاضر'])
+m_count = len(df_results[df_results['الحالة'] == 'معتذر'])
+t_count = len(all_names) if all_names else "يدوي"
+
+st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px;">
+        <div style="background-color: #28a745; color: white; padding: 15px; border-radius: 10px; flex: 1; text-align: center;">
+            <div style="font-size: 0.9em;">الحاضرين</div>
+            <div style="font-size: 1.5em; font-weight: bold;">{h_count}</div>
+        </div>
+        <div style="background-color: #dc3545; color: white; padding: 15px; border-radius: 10px; flex: 1; text-align: center;">
+            <div style="font-size: 0.9em;">المعتذرين</div>
+            <div style="font-size: 1.5em; font-weight: bold;">{m_count}</div>
+        </div>
+        <div style="background-color: #1a1a1a; color: #D4AF37; padding: 15px; border-radius: 10px; flex: 1; text-align: center; border: 1px solid #D4AF37;">
+            <div style="font-size: 0.9em;">الإجمالي</div>
+            <div style="font-size: 1.5em; font-weight: bold;">{t_count}</div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
 st.markdown(f"""
     <div class="event-card">
         <p style="font-size:1.2em;">📅 <b>التاريخ الهجري:</b> {settings['h_date']}</p>
@@ -104,12 +133,12 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 5. سجل الحضور ---
+# --- 6. سجل الحضور ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
 
 if not all_names:
-    st.info("ℹ️ ملاحظة: ملف الأسماء (names.xlsx) غير موجود. سجل اسمك يدوياً:")
+    st.info("ℹ️ ملاحظة: سجل اسمك يدوياً:")
     selected = st.text_input("اكتب اسمك بالكامل:")
 else:
     search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
@@ -121,7 +150,6 @@ if selected and selected != "-- اختر --":
     with ca:
         if st.button("✅ تأكيد الحضور"):
             new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-            # دمج البيانات مع حذف التكرار لنفس الاسم
             final_df = pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True)
             final_df.to_csv('results.csv', index=False, encoding='utf-8-sig')
             st.success(f"تم تسجيل حضورك")
@@ -134,23 +162,24 @@ if selected and selected != "-- اختر --":
             st.warning(f"تم تسجيل اعتذارك")
             st.rerun()
 
-# --- 6. الإحصائيات والجدول (هنا التعديل المهم) ---
+# --- 7. عرض الجدول مع تمييز الألوان ---
 st.divider()
-st.markdown("<h4 style='text-align:center;'>📊 الإحصائيات والقائمة</h4>", unsafe_allow_html=True)
-r1, r2, r3 = st.columns(3)
-with r1: st.metric("المسجلين", len(all_names) if all_names else "يدوي")
-with r2: st.metric("حاضر ✅", len(df_results[df_results['الحالة'] == 'حاضر']))
-with r3: st.metric("معتذر ❌", len(df_results[df_results['الحالة'] == 'معتذر']))
-
-# عرض الجدول بشكل مرتب
 if not df_results.empty:
     st.write("### 📋 قائمة الحضور والاعتذار:")
-    # ترتيب الجدول ليظهر الأحدث أولاً
-    st.dataframe(df_results[['الاسم', 'الحالة', 'الوقت']], use_container_width=True, hide_index=True)
+    
+    # وظيفة لتمويل المعتذر باللون الأحمر
+    def color_status(val):
+        color = '#ffcccc' if val == 'معتذر' else '#ccffcc'
+        return f'background-color: {color}'
+
+    # تطبيق التنسيق على الجدول
+    styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.applymap(color_status, subset=['الحالة'])
+    
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
 else:
     st.info("لا يوجد مسجلين حتى الآن.")
 
-# --- 7. لوحة التحكم ---
+# --- 8. لوحة التحكم ---
 with st.expander("⚙️ لوحة التحكم"):
     pw = st.text_input("كلمة المرور", type="password")
     if pw == "1234":
