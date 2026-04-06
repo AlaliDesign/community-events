@@ -84,10 +84,10 @@ with col_m:
 
 st.markdown("<h3 style='text-align:center; color:#1a1a1a; font-weight:bold;'>مناسبات جماعة آل علي في الرياض</h3>", unsafe_allow_html=True)
 
-# --- 5. العدادات الملونة ---
+# العدادات
 h_count = len(df_results[df_results['الحالة'] == 'حاضر'])
 m_count = len(df_results[df_results['الحالة'] == 'معتذر'])
-t_count = len(all_names) if all_names else "يدوي"
+t_count = len(all_names)
 
 st.markdown(f"""
     <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px;">
@@ -126,13 +126,13 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 6. سجل الحضور ---
+# --- 5. سجل الحضور ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
 
 if not all_names:
-    st.info("ℹ️ ملاحظة: سجل اسمك يدوياً:")
-    selected = st.text_input("اكتب اسمك بالكامل:")
+    st.info("ℹ️ القائمة فارغة. أضف أسماء من لوحة التحكم.")
+    selected = st.text_input("أو اكتب اسمك يدوياً هنا:")
 else:
     search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
     opts = [n for n in all_names if search in n] if search else all_names
@@ -155,41 +155,59 @@ if selected and selected != "-- اختر --":
             st.warning(f"تم تسجيل اعتذارك")
             st.rerun()
 
-# --- 7. عرض الجدول (تصحيح الخطأ البرمجي) ---
+# --- 6. عرض الجدول ---
 st.divider()
 if not df_results.empty:
     st.markdown("### 📋 قائمة الحضور والاعتذار")
-    
     def color_status(val):
-        if val == 'معتذر':
-            return 'background-color: #ffcccc; color: #990000; font-weight: bold;'
+        if val == 'معتذر': return 'background-color: #ffcccc; color: #990000; font-weight: bold;'
         return 'background-color: #ccffcc; color: #006600;'
-
-    # استخدام map بدلاً من applymap لتجنب الخطأ في النسخ الجديدة
     styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.map(color_status, subset=['الحالة'])
-    
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
-else:
-    st.info("لا يوجد مسجلين حتى الآن.")
 
-# --- 8. لوحة التحكم ---
-with st.expander("⚙️ لوحة التحكم"):
-    pw = st.text_input("كلمة المرور", type="password")
+# --- 7. لوحة التحكم (إضافة وحذف الأسماء) ---
+with st.expander("⚙️ لوحة التحكم وإدارة الأسماء"):
+    pw = st.text_input("كلمة المرور", type="password", key="admin_pw")
     if pw == "1234":
-        if st.button("تصفير السجل لمناسبة جديدة"):
-            if os.path.exists('results.csv'): 
-                os.remove('results.csv')
-                st.rerun()
-        st.write("---")
-        nh = st.text_input("التاريخ الهجري (مثلاً: 1447-10-25)", value=settings['h_date'])
+        # قسم إدارة ملف الأسماء
+        st.subheader("👥 إدارة قائمة الأسماء (names.xlsx)")
+        col_add, col_del = st.columns(2)
+        
+        with col_add:
+            new_name = st.text_input("أضف اسم جديد للقائمة:")
+            if st.button("➕ إضافة اسم"):
+                if new_name and new_name not in all_names:
+                    all_names.append(new_name)
+                    pd.DataFrame(all_names).to_excel('names.xlsx', index=False, header=False)
+                    st.success(f"تمت إضافة {new_name}")
+                    st.rerun()
+        
+        with col_del:
+            if all_names:
+                name_to_del = st.selectbox("اختر اسم لحذفه:", options=all_names)
+                if st.button("🗑️ حذف الاسم"):
+                    all_names.remove(name_to_del)
+                    pd.DataFrame(all_names).to_excel('names.xlsx', index=False, header=False)
+                    st.error(f"تم حذف {name_to_del}")
+                    st.rerun()
+
+        st.divider()
+        # قسم إعدادات المناسبة
+        st.subheader("📅 إعدادات المناسبة")
+        nh = st.text_input("التاريخ الهجري (1447-10-25)", value=settings['h_date'])
         nw = st.text_input("الوقت", value=settings['time'])
         nl = st.text_input("الموقع", value=settings['location'])
         nm = st.text_input("رابط الخريطة", value=settings['map_url'])
         
-        if st.button("حفظ ونشر المناسبة"):
+        if st.button("💾 حفظ ونشر المناسبة"):
             with open('settings.json', 'w', encoding='utf-8') as f:
                 json.dump({"title":"مناسبات جماعة آل علي في الرياض", "h_date":nh, "time":nw, "location":nl, "map_url":nm}, f, ensure_ascii=False)
             st.success("تم الحفظ!")
             st.rerun()
+
+        if st.button("🧹 تصفير سجل الحضور (لمناسبة جديدة)"):
+            if os.path.exists('results.csv'): 
+                os.remove('results.csv')
+                st.rerun()
 
 st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
