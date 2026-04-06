@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import json
 from PIL import Image
 
 # --- 1. إعدادات الصفحة ---
@@ -15,20 +16,29 @@ try:
 except:
     st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️", layout="centered")
 
-# --- 2. وظائف إدارة البيانات والبصمة الرقمية ---
-# استخدام خاصية session_state كبصمة مؤقتة للجلسة
+# --- 2. إدارة البيانات والبصمة الرقمية ---
 if 'has_voted' not in st.session_state:
     st.session_state.has_voted = False
 
-def load_results():
+def load_data():
+    # تحميل النتائج
+    results = pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     if os.path.exists('results.csv'):
-        try: return pd.read_csv('results.csv', encoding='utf-8-sig')
-        except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
-    return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
+        try: results = pd.read_csv('results.csv', encoding='utf-8-sig')
+        except: pass
+    
+    # تحميل الإعدادات (التاريخ والموقع)
+    settings = {"h_date": "1447-10-18", "time": "4 عصرًا", "location": "الرياض", "map_url": ""}
+    if os.path.exists('settings.json'):
+        try:
+            with open('settings.json', 'r', encoding='utf-8') as f:
+                settings.update(json.load(f))
+        except: pass
+    return results, settings
 
-df_results = load_results()
+df_results, settings = load_data()
 
-# --- 3. التنسيق الجمالي ---
+# --- 3. التنسيق الجمالي (CSS) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -40,12 +50,14 @@ st.markdown("""
         border-radius: 20px; background-color: #ffffff;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .stButton>button { border-radius: 12px; font-weight: bold; width: 100%; height: 3em; }
+    .stButton>button { border-radius: 12px; font-weight: bold; width: 100%; height: 3em; border: 2px solid #D4AF37; background-color: #1a1a1a; color: #D4AF37; }
+    .stButton>button:hover { background-color: #D4AF37; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. واجهة العرض الرئيسية ---
-st.markdown("<h2 style='text-align:center;'>مناسبات جماعة آل علي</h2>", unsafe_allow_html=True)
+# --- 4. واجهة العرض (بيانات المناسبة) ---
+st.markdown("<h2 style='text-align:center; color:#1a1a1a;'>مناسبات جماعة آل علي</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#D4AF37; font-weight:bold;'>الرياض</p>", unsafe_allow_html=True)
 
 # عدادات الحضور
 h_count = len(df_results[df_results['الحالة'] == 'حاضر'])
@@ -53,30 +65,39 @@ m_count = len(df_results[df_results['الحالة'] == 'معتذر'])
 
 st.markdown(f"""
     <div style="display: flex; justify-content: space-around; margin: 20px 0; gap: 10px;">
-        <div style="background: #28a745; color: white; padding: 15px; border-radius: 15px; flex: 1; text-align: center;">
+        <div style="background: linear-gradient(135deg, #28a745, #218838); color: white; padding: 15px; border-radius: 15px; flex: 1; text-align: center;">
             <small>الحاضرين</small><br><b style="font-size: 1.5em;">{h_count}</b>
         </div>
-        <div style="background: #dc3545; color: white; padding: 15px; border-radius: 15px; flex: 1; text-align: center;">
+        <div style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 15px; border-radius: 15px; flex: 1; text-align: center;">
             <small>المعتذرين</small><br><b style="font-size: 1.5em;">{m_count}</b>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
+# كليشة بيانات المناسبة الثابتة
+st.markdown(f"""
+    <div style="background-color: #FFFDF5; border: 1px double #D4AF37; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px;">
+        <p style="font-size:1.2em; margin:5px;">📅 <b>التاريخ:</b> {settings['h_date']}</p>
+        <p style="font-size:1.1em; margin:5px;">⏰ <b>الوقت:</b> {settings['time']}</p>
+        <p style="font-size:1.1em; margin:5px;">📍 <b>الموقع:</b> {settings['location']}</p>
+    </div>
+""", unsafe_allow_html=True)
+
+if settings['map_url']:
+    st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
+
 # --- 5. منطقة تسجيل الحضور (الحماية من التلاعب) ---
 st.divider()
 
-# القفل البرمجي: إذا سجل الشخص، تختفي الحقول
 if st.session_state.has_voted:
     st.success("✅ بيّض الله وجهك، تم استلام تسجيلك بنجاح.")
-    st.info("نظام الحماية: تم تسجيل دخولك مسبقاً من هذا الجهاز.")
+    st.info("نظام الحماية: لقد سجلت مسبقاً من هذا الجهاز.")
 else:
     st.subheader("📝 سجل حضورك")
     u_name = st.text_input("👤 أدخل اسمك الثلاثي/الرباعي:", placeholder="اكتب اسمك هنا...")
 
     if u_name:
         name_clean = u_name.strip()
-        
-        # 1. منع تكرار نفس الاسم في القاعدة
         if name_clean in df_results['الاسم'].values:
             st.warning(f"⚠️ الاسم '{name_clean}' مسجل مسبقاً في القائمة.")
         else:
@@ -85,34 +106,46 @@ else:
                 if st.button("✅ تأكيد الحضور"):
                     new_entry = pd.DataFrame({'الاسم': [name_clean], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                     pd.concat([df_results, new_entry], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-                    st.session_state.has_voted = True # قفل الجهاز فوراً
+                    st.session_state.has_voted = True
                     st.rerun()
             with col2:
                 if st.button("❌ اعتذار"):
                     new_entry = pd.DataFrame({'الاسم': [name_clean], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                     pd.concat([df_results, new_entry], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-                    st.session_state.has_voted = True # قفل الجهاز فوراً
+                    st.session_state.has_voted = True
                     st.rerun()
 
 # --- 6. عرض القائمة للجميع ---
 if not df_results.empty:
     st.divider()
     st.markdown("### 📋 قائمة المسجلين")
-    
     def style_row(val):
         return f'background-color: {"#ccffcc" if val == "حاضر" else "#ffcccc"}'
-
     try:
         styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.map(style_row, subset=['الحالة'])
     except:
         styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.applymap(style_row, subset=['الحالة'])
-
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
-# --- 7. لوحة التحكم (للمنظم) ---
-with st.expander("⚙️ إعدادات الإدارة"):
-    if st.text_input("كلمة مرور الإدارة", type="password") == "1234":
-        if st.button("🧹 تصفير السجل (بدء مناسبة جديدة)"):
+# --- 7. لوحة الإدارة (التعديلات التي طلبتها) ---
+st.write("")
+with st.expander("⚙️ إعدادات الإدارة (للمنظم فقط)"):
+    admin_pw = st.text_input("كلمة المرور", type="password")
+    if admin_pw == "1234":
+        st.markdown("#### 📅 تحديث بيانات المناسبة")
+        new_h = st.text_input("التاريخ الهجري:", value=settings['h_date'])
+        new_t = st.text_input("الوقت:", value=settings['time'])
+        new_l = st.text_input("الموقع:", value=settings['location'])
+        new_m = st.text_input("رابط الخرائط:", value=settings['map_url'])
+        
+        if st.button("💾 حفظ بيانات المناسبة"):
+            with open('settings.json', 'w', encoding='utf-8') as f:
+                json.dump({"h_date":new_h, "time":new_t, "location":new_l, "map_url":new_m}, f, ensure_ascii=False)
+            st.success("✅ تم تحديث البيانات!")
+            st.rerun()
+
+        st.divider()
+        if st.button("🧹 تصفير سجل الحضور (لمناسبة جديدة)"):
             if os.path.exists('results.csv'): os.remove('results.csv')
             st.session_state.has_voted = False
             st.rerun()
