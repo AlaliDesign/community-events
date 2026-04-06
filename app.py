@@ -9,7 +9,6 @@ from PIL import Image
 
 # --- 1. إعدادات الصفحة والأيقونة ---
 icon_path = 'logo.png'
-# رابط الصورة المباشر الذي وضعته أنت
 image_url = "https://i.ibb.co/Pv2TzzCj/logo.png"
 
 if os.path.exists(icon_path):
@@ -21,17 +20,19 @@ if os.path.exists(icon_path):
 else:
     st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
 
-# هذا هو السطر الذي سبب المشكلة، وضعتُه لك الآن بمسافة صحيحة تماماً
 st.markdown(f'<link rel="apple-touch-icon" href="{image_url}">', unsafe_allow_html=True)
 
 # --- 2. وظائف البيانات ---
 def load_data():
     names = []
+    # التحقق من وجود ملف الأسماء
     if os.path.exists('names.xlsx'):
         try:
             df = pd.read_excel('names.xlsx')
+            # نأخذ العمود الأول وننظفه من الفراغات
             names = sorted(df.iloc[:, 0].dropna().astype(str).unique().tolist())
-        except: pass
+        except Exception as e:
+            st.error(f"خطأ في قراءة ملف الأسماء: {e}")
     
     results = pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     if os.path.exists('results.csv'):
@@ -112,27 +113,31 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 5. سجل الحضور ---
+# --- 5. سجل الحضور (هنا التعديل) ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
-search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
-opts = [n for n in all_names if search in n] if search else all_names
-selected = st.selectbox("اختر اسمك من القائمة:", options=["-- اختر --"] + opts)
 
-if selected != "-- اختر --":
-    ca, cb = st.columns(2)
-    with ca:
-        if st.button("✅ تأكيد الحضور"):
-            new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-            st.success("تم تسجيل حضورك")
-            st.rerun()
-    with cb:
-        if st.button("❌ اعتذار"):
-            new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-            st.warning("تم تسجيل اعتذارك")
-            st.rerun()
+if not all_names:
+    st.warning("⚠️ لم يتم العثور على أسماء في ملف names.xlsx. يرجى التأكد من رفع الملف.")
+else:
+    search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
+    opts = [n for n in all_names if search in n] if search else all_names
+    selected = st.selectbox("اختر اسمك من القائمة:", options=["-- اختر --"] + opts)
+
+    if selected != "-- اختر --":
+        ca, cb = st.columns(2)
+        with ca:
+            if st.button("✅ تأكيد الحضور"):
+                new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+                pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+                st.success(f"تم تسجيل حضورك يا {selected}")
+                st.rerun()
+        with cb:
+            if st.button("❌ اعتذار"):
+                new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+                pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+                st.warning(f"تم تسجيل اعتذارك يا {selected}")
+                st.rerun()
 
 # --- 6. الإحصائيات ---
 st.divider()
@@ -161,4 +166,4 @@ with st.expander("⚙️ لوحة التحكم"):
             st.success("تم الحفظ!")
             st.rerun()
 
-st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
