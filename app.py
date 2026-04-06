@@ -3,40 +3,29 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- 1. إعدادات الصفحة والملفات ---
-EVENT_NAME = "مناسبة الجماعة الكبرى"
-EXCEL_FILE = 'names.xlsx'
-CSV_RESULTS = 'community_events_results.csv'
+# --- 1. إعدادات الصفحة والشعار ---
+# تم وضع logo.png كأيقونة رسمية للتطبيق
+st.set_page_config(
+    page_title="مناسبات جماعة آل علي بالرياض", 
+    layout="centered", 
+    page_icon="logo.png" 
+)
 
-st.set_page_config(page_title=EVENT_NAME, layout="centered", page_icon="⚜️")
-
-# --- 2. التنسيق المطور للوضوح العالي ---
+# --- 2. التنسيق الملكي المحدث (وضوح عالي) ---
 st.markdown("""
     <style>
-    /* الخلفية العامة */
     .main { background-color: #080808; }
-    h1 { color: #D4AF37; text-align: center; padding-bottom: 20px; }
+    h1 { color: #D4AF37; text-align: center; font-family: 'Arial'; padding: 10px; }
     
-    /* تنسيق بطاقات الإحصائيات بألوان فاتحة وواضحة */
+    /* تنسيق بطاقات الإحصائيات - لون فاتح وخط غامق */
     [data-testid="stMetric"] {
-        background-color: #f8f9fa; /* لون خلفية فاتح جداً */
+        background-color: #fdfdfd; 
         border: 2px solid #D4AF37;
         padding: 15px;
         border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    
-    /* جعل أرقام الإحصائيات غامقة وواضحة */
-    [data-testid="stMetricValue"] {
-        color: #1a1a1a !important;
-        font-weight: bold !important;
-    }
-    
-    /* اسم الإحصائية (Label) */
-    [data-testid="stMetricLabel"] {
-        color: #444 !important;
-        font-weight: bold !important;
-    }
+    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-weight: bold !important; }
+    [data-testid="stMetricLabel"] { color: #444 !important; font-weight: bold !important; }
 
     /* تنسيق الأزرار */
     .stButton>button { 
@@ -47,7 +36,10 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. وظيفة جلب البيانات ---
+# --- 3. وظائف البيانات ---
+EXCEL_FILE = 'names.xlsx'
+CSV_RESULTS = 'community_events_results.csv'
+
 def load_results():
     if os.path.exists(CSV_RESULTS):
         try:
@@ -56,38 +48,42 @@ def load_results():
             return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# --- 4. واجهة المستخدم ---
-st.markdown(f"<h1>⚜️ {EVENT_NAME} ⚜️</h1>", unsafe_allow_html=True)
+# --- 4. واجهة التطبيق ---
+# عرض الشعار في أعلى الصفحة (اختياري)
+if os.path.exists("logo.png"):
+    st.image("logo.png", width=120)
+
+st.markdown("<h1>⚜️ مناسبات جماعة آل علي بالرياض ⚜️</h1>", unsafe_allow_html=True)
 
 if os.path.exists(EXCEL_FILE):
     df_names = pd.read_excel(EXCEL_FILE)
     names_list = sorted(df_names.iloc[:, 0].dropna().unique().tolist())
     
-    selected_name = st.selectbox("🔍 ابحث عن اسمك في القائمة:", options=["-- اختر اسمك --"] + names_list)
+    selected_name = st.selectbox("🔍 ابحث عن اسمك لتسجيل الحضور:", options=["-- اختر اسمك من القائمة --"] + names_list)
 
-    if selected_name != "-- اختر اسمك --":
+    if selected_name != "-- اختر اسمك من القائمة --":
         col1, col2 = st.columns(2)
         with col1:
             if st.button("✅ تأكيد الحضور"):
                 res = load_results()
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.success("تم تسجيل حضورك بنجاح")
+                st.success(f"تم تسجيل حضورك يا {selected_name}")
                 st.rerun()
         with col2:
             if st.button("❌ اعتذار"):
                 res = load_results()
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.warning("تم تسجيل اعتذارك")
+                st.warning("تم تسجيل الاعتذار")
                 st.rerun()
 
-    # --- 5. لوحة الإحصائيات بالألوان الجديدة ---
+    # --- 5. لوحة التحكم للمشرف (الإحصائيات) ---
     st.divider()
     df_final = load_results()
     
     if not df_final.empty:
-        st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 ملخص التسجيل</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 ملخص حالة الحضور</h3>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         with c1:
             st.metric("المسجلين", len(df_final))
@@ -96,11 +92,11 @@ if os.path.exists(EXCEL_FILE):
         with c3:
             st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
 
-        with st.expander("👁️ عرض كشف الأسماء"):
+        with st.expander("👁️ استعراض الكشف التفصيلي"):
             st.dataframe(df_final, use_container_width=True, hide_index=True)
             csv = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 تحميل التقرير النهائي", data=csv, file_name="report.csv")
+            st.download_button("📥 تحميل التقرير النهائي للمشرف", data=csv, file_name="attendance_report.csv")
 else:
-    st.error("تنبيه: ملف names.xlsx غير موجود في المجلد.")
+    st.error("تنبيه: ملف names.xlsx غير موجود بالمستودع.")
 
 st.markdown("<br><p style='text-align:center; color:#555;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
