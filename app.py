@@ -43,7 +43,7 @@ def load_results():
 if 'names' not in st.session_state:
     st.session_state.names = load_names()
 if 'input_key' not in st.session_state:
-    st.session_state.input_key = 0 # هذا هو المفتاح السحري للتفريغ
+    st.session_state.input_key = 0
 
 # --- 5. واجهة التطبيق ---
 if os.path.exists("logo.png"):
@@ -52,6 +52,7 @@ if os.path.exists("logo.png"):
 
 st.markdown("<div class='main-title'>⚜️ مناسبات جماعة آل علي بالرياض ⚜️</div>", unsafe_allow_html=True)
 
+# عرض القائمة الرئيسية
 names_list = st.session_state.names
 
 if names_list:
@@ -85,7 +86,7 @@ if not df_final.empty:
     with st.expander("👁️ عرض الكشف"):
         st.dataframe(df_final, use_container_width=True, hide_index=True)
 
-# --- 6. مركز تحكم الإدارة (الإصدار العبقري للتفريغ) ---
+# --- 6. مركز تحكم الإدارة (تحديث لضمان الحفظ والتفريغ) ---
 st.write("---")
 with st.expander("⚙️ إعدادات الإدارة"):
     admin_pass = st.text_input("رقم الإدارة السري:", type="password")
@@ -94,22 +95,33 @@ with st.expander("⚙️ إعدادات الإدارة"):
         tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         
         with tab1:
-            # هنا نستخدم المفتاح المتغير input_key لضمان التفريغ
-            new_person = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
+            # الحقل يعتمد على الـ key المتغير للتفريغ
+            new_person = st.text_input("الاسم الجديد بالكامل:", key=f"add_{st.session_state.input_key}")
             
             if st.button("حفظ الآن"):
-                if new_person and new_person not in st.session_state.names:
-                    st.session_state.names.append(new_person)
-                    save_names(st.session_state.names)
-                    # تغيير المفتاح فوراً لمسح الحقل
-                    st.session_state.input_key += 1 
-                    st.success(f"تمت إضافة {new_person}")
-                    st.rerun()
-                elif new_person in st.session_state.names:
-                    st.warning("موجود مسبقاً!")
+                if new_person:
+                    # تنظيف النص من المسافات الزائدة
+                    clean_name = new_person.strip()
+                    if clean_name not in st.session_state.names:
+                        # 1. تحديث القائمة في الذاكرة أولاً
+                        st.session_state.names.append(clean_name)
+                        st.session_state.names = sorted(st.session_state.names)
+                        
+                        # 2. الحفظ الفعلي في ملف الإكسل
+                        save_names(st.session_state.names)
+                        
+                        # 3. تحديث مفتاح الحقل للتفريغ
+                        st.session_state.input_key += 1
+                        
+                        st.success(f"تمت إضافة {clean_name}")
+                        st.rerun()
+                    else:
+                        st.warning("الاسم موجود مسبقاً في القائمة!")
+                else:
+                    st.error("الرجاء كتابة اسم!")
         
         with tab2:
-            name_to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
+            name_to_del = st.selectbox("حذف اسم نهائياً:", options=["-- اختر --"] + st.session_state.names)
             if st.button("تأكيد الحذف"):
                 if name_to_del != "-- اختر --":
                     st.session_state.names.remove(name_to_del)
@@ -117,7 +129,12 @@ with st.expander("⚙️ إعدادات الإدارة"):
                     st.rerun()
                     
         with tab3:
-            if st.button("🗑️ تصفير الحضور"):
+            if st.button("🗑️ تصفير الحضور للمناسبة الجديدة"):
                 if os.path.exists(CSV_RESULTS):
                     os.remove(CSV_RESULTS)
+                    st.success("تم التصفير بنجاح")
                     st.rerun()
+    elif admin_pass != "":
+        st.error("الرقم السري غير صحيح")
+
+st.markdown("<p style='text-align:center; color:#555; font-size:0.7em;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
