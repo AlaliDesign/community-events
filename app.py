@@ -3,13 +3,24 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
+# --- 1. إعدادات الصفحة والشعار ---
+st.set_page_config(
+    page_title="مناسبات آل علي", 
+    layout="centered", 
+    page_icon="logo.png"
+)
 
-# --- 2. التنسيق الملكي المريح للعين ---
+# --- 2. التنسيق (تحديث هام لإخفاء شعار Streamlit) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
+    
+    /* --- حل مشكلة الشعار: إخفاء شعار Streamlit والقائمة الافتراضية --- */
+    #MainMenu {visibility: hidden;} /* إخفاء قائمة الثلاث نقاط */
+    footer {visibility: hidden;}    /* إخفاء التذيل بالكامل بما فيه شعار القارب */
+    header {visibility: hidden;}    /* إخفاء الهيدر العلوي الافتراضي */
+    
+    /* بقية التنسيقات الملكية للمناسبة */
     .stApp { background-color: #F5F5DC; }
     .main .block-container {
         border: 2px solid #D4AF37;
@@ -101,7 +112,7 @@ c1, c2 = st.columns(2)
 with c1: st.metric("إجمالي القائمة", total_all)
 with c2: st.metric("إجمالي المتفاعلين", total_done)
 
-# --- 7. لوحة التحكم (تعديل منع التكرار هنا) ---
+# --- 7. لوحة التحكم ---
 with st.expander("⚙️ لوحة تحكم المشرف"):
     admin_pass = st.text_input("كلمة المرور:", type="password")
     if admin_pass == "1234":
@@ -111,15 +122,14 @@ with st.expander("⚙️ لوحة تحكم المشرف"):
             if st.button("حفظ الاسم الجديد"):
                 if new_p:
                     clean_n = new_p.strip()
-                    # التحقق الذكي من وجود الاسم مسبقاً
                     if clean_n in st.session_state.names:
-                        st.error(f"⚠️ تنبيه: الاسم ({clean_n}) مضاف مسبقاً في القائمة!")
+                        st.error(f"⚠️ الاسم مضاف مسبقاً!")
                     else:
                         st.session_state.names.append(clean_n)
                         st.session_state.names = sorted(st.session_state.names)
                         save_names(st.session_state.names)
                         st.session_state.input_key += 1
-                        st.success(f"✅ تم حفظ {clean_n} بنجاح")
+                        st.success(f"✅ تم حفظ الاسم بنجاح")
                         st.rerun()
         with tab2:
             to_del = st.selectbox("اختر اسماً لحذفه:", options=["-- اختر --"] + st.session_state.names)
