@@ -46,7 +46,7 @@ st.markdown("""
     #MainMenu, footer, header {visibility: hidden;}
     .stApp { background-color: #FDFCF0; }
     .main .block-container {
-        border: 2px solid #D4AF37; padding: 20px !important; 
+        border: 2px solid #D4AF37; padding: 16px !important; 
         border-radius: 20px; background-color: #ffffff;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
@@ -76,7 +76,8 @@ st.markdown(f"""
 
 # كليشة بيانات المناسبة الثابتة
 st.markdown(f"""
-    <div style="background-color: #FFFDF5; border: 1px double #D4AF37; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px;">
+    <div style="background-color: #FFFDF5; border: 1px double #D4AF37; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 16
+px;">
         <p style="font-size:1.2em; margin:5px;">📅 <b>التاريخ:</b> {settings['h_date']}</p>
         <p style="font-size:1.1em; margin:5px;">⏰ <b>الوقت:</b> {settings['time']}</p>
         <p style="font-size:1.1em; margin:5px;">📍 <b>الموقع:</b> {settings['location']}</p>
@@ -150,4 +151,4 @@ with st.expander("⚙️ إعدادات الإدارة (للمنظم فقط)"):
             st.session_state.has_voted = False
             st.rerun()
 
-st.markdown("<p style='text-align:center; color:#aaa; font-size:0.8em; margin-top:30px;'>تصميم محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#aaa; font-size:0.8em; margin-top:20px;'>تصميم محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
