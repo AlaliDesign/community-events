@@ -1,22 +1,21 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from PIL import Image
 import os
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق الملكي المحدث (إخفاء العناصر الافتراضية + تنسيق الشعار الدائري) ---
+# --- 2. التنسيق الملكي المطور (إخفاء الشعار الافتراضي + دائرة الشعار) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
     
-    /* إخفاء شعار Streamlit والقوائم الجانبية */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* الخلفية والبرواز */
     .stApp { background-color: #F5F5DC; }
     .main .block-container {
         border: 2px solid #D4AF37;
@@ -28,34 +27,24 @@ st.markdown("""
         max-width: 95% !important;
     }
 
-    .bismillah { font-family: 'Amiri', serif; font-size: 2em; color: #1a1a1a; text-align: center; margin-bottom: 5px; }
+    .bismillah { font-family: 'Amiri', serif; font-size: 2.2em; color: #1a1a1a; text-align: center; margin-bottom: 10px; }
     
-    /* تنسيق الشعار الدائري في المنتصف */
+    /* تنسيق حاوية الشعار لضمان التوسط */
     .logo-container {
         display: flex;
         justify-content: center;
-        align-items: center;
         margin-bottom: 20px;
-    }
-    .circular-logo {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        border: 3px solid #D4AF37;
-        object-fit: cover;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
     .main-title { 
         color: #D4AF37; 
         text-align: center; 
-        font-size: 1.4em !important; 
+        font-size: 1.5em !important; 
         font-family: 'Tajawal', sans-serif;
         font-weight: bold;
         margin-bottom: 25px;
     }
     
-    /* تنسيق العدادات */
     [data-testid="stMetric"] {
         background-color: #FFFDF5; 
         border: 1px solid #D4AF37;
@@ -71,7 +60,26 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. إدارة البيانات ---
+# --- 3. وظيفة عرض الشعار الدائري بشكل مضمون ---
+def display_circular_logo(image_path):
+    if os.path.exists(image_path):
+        img = Image.open(image_path)
+        # عرض الصورة باستخدام Streamlit مع تنسيق CSS للدائرة
+        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+        st.image(img, width=150) # سيتم تحويلها لدائرة عبر التنسيق أدناه
+        st.markdown("""
+            <style>
+            /* استهداف الصورة المرفوعة داخل الحاوية */
+            [data-testid="stImage"] img {
+                border-radius: 50%;
+                border: 3px solid #D4AF37;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            </style>
+            </div>
+            """, unsafe_allow_html=True)
+
+# --- 4. إدارة البيانات ---
 EXCEL_FILE = 'names.xlsx'
 CSV_RESULTS = 'community_events_results.csv'
 
@@ -96,12 +104,11 @@ def load_results():
 if 'input_key' not in st.session_state:
     st.session_state.input_key = 0
 
-# --- 4. واجهة العرض ---
+# --- 5. واجهة العرض ---
 st.markdown("<div class='bismillah'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>", unsafe_allow_html=True)
 
-# عرض الشعار بشكل دائري مفرغ في المنتصف
-if os.path.exists("logo.png"):
-    st.markdown('<div class="logo-container"><img src="app/static/logo.png" class="circular-logo"></div>', unsafe_allow_html=True)
+# استدعاء دالة عرض الشعار
+display_circular_logo("logo.png")
 
 st.markdown("<div class='main-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
 
@@ -109,7 +116,7 @@ if 'names' not in st.session_state:
     st.session_state.names = load_names()
 names_list = st.session_state.names
 
-# --- 5. حقل البحث وتسجيل الحضور ---
+# --- 6. حقل البحث وتسجيل الحضور ---
 if names_list:
     selected_name = st.selectbox("🔍 ابحث عن اسمك لتسجيل الحضور:", options=["-- اختر من القائمة --"] + names_list)
 
@@ -132,7 +139,7 @@ if names_list:
 
 st.divider()
 
-# --- 6. إحصائيات الفرز العام ---
+# --- 7. إحصائيات الفرز العام ---
 df_results = load_results()
 total_all = len(names_list)
 total_present = len(df_results[df_results['الحالة'] == 'حاضر'])
@@ -145,7 +152,7 @@ with c1: st.metric("إجمالي القائمة", total_all)
 with c2: st.metric("✅ حاضر", total_present)
 with c3: st.metric("❌ معتذر", total_absent)
 
-# --- 7. لوحة التحكم ---
+# --- 8. لوحة التحكم ---
 with st.expander("⚙️ لوحة تحكم المشرف"):
     admin_pass = st.text_input("كلمة المرور:", type="password")
     if admin_pass == "1234":
@@ -160,8 +167,6 @@ with st.expander("⚙️ لوحة تحكم المشرف"):
                     st.session_state.input_key += 1
                     st.success("✅ تم الحفظ")
                     st.rerun()
-                elif new_p.strip() in st.session_state.names:
-                    st.error("الاسم موجود مسبقاً")
         with tab2:
             to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
             if st.button("تأكيد الحذف"):
