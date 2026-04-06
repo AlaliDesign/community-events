@@ -25,17 +25,16 @@ st.markdown(f'<link rel="apple-touch-icon" href="{image_url}">', unsafe_allow_ht
 # --- 2. وظائف البيانات ---
 def load_data():
     names = []
-    # محاولة قراءة ملف الأكسل
     if os.path.exists('names.xlsx'):
         try:
             df = pd.read_excel('names.xlsx')
-            # نأخذ العمود الأول ونحوله لقائمة
             names = sorted(df.iloc[:, 0].dropna().astype(str).unique().tolist())
         except: pass
     
     results = pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     if os.path.exists('results.csv'):
-        try: results = pd.read_csv('results.csv', encoding='utf-8-sig')
+        try: 
+            results = pd.read_csv('results.csv', encoding='utf-8-sig')
         except: pass
         
     settings = {"title": "مناسبات جماعة آل علي في الرياض", "h_date": "لم يحدد", "time": "حدد الوقت", "location": "حدد الموقع", "map_url": ""}
@@ -105,50 +104,60 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 5. سجل الحضور (إصلاح القائمة) ---
+# --- 5. سجل الحضور ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
 
-# إذا لم يجد أسماء، سيظهر لك خيار لكتابة الاسم يدوياً بدلاً من الاختفاء
 if not all_names:
-    st.info("ℹ️ ملاحظة: ملف الأسماء (names.xlsx) غير موجود أو فارغ. يمكنك كتابة اسمك يدوياً أدناه:")
+    st.info("ℹ️ ملاحظة: ملف الأسماء (names.xlsx) غير موجود. سجل اسمك يدوياً:")
     selected = st.text_input("اكتب اسمك بالكامل:")
 else:
     search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
     opts = [n for n in all_names if search in n] if search else all_names
     selected = st.selectbox("اختر اسمك من القائمة:", options=["-- اختر --"] + opts)
 
-# زر التأكيد والاعتذار (يظهر إذا كان هناك اسم مكتوب أو مختار)
 if selected and selected != "-- اختر --":
     ca, cb = st.columns(2)
     with ca:
         if st.button("✅ تأكيد الحضور"):
             new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+            # دمج البيانات مع حذف التكرار لنفس الاسم
+            final_df = pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True)
+            final_df.to_csv('results.csv', index=False, encoding='utf-8-sig')
             st.success(f"تم تسجيل حضورك")
             st.rerun()
     with cb:
         if st.button("❌ اعتذار"):
             new = pd.DataFrame({'الاسم': [selected], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
-            pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+            final_df = pd.concat([df_results[df_results['الاسم'] != selected], new], ignore_index=True)
+            final_df.to_csv('results.csv', index=False, encoding='utf-8-sig')
             st.warning(f"تم تسجيل اعتذارك")
             st.rerun()
 
-# --- 6. الإحصائيات ---
+# --- 6. الإحصائيات والجدول (هنا التعديل المهم) ---
 st.divider()
-st.markdown("<h4 style='text-align:center;'>📊 الإحصائيات</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align:center;'>📊 الإحصائيات والقائمة</h4>", unsafe_allow_html=True)
 r1, r2, r3 = st.columns(3)
 with r1: st.metric("المسجلين", len(all_names) if all_names else "يدوي")
 with r2: st.metric("حاضر ✅", len(df_results[df_results['الحالة'] == 'حاضر']))
 with r3: st.metric("معتذر ❌", len(df_results[df_results['الحالة'] == 'معتذر']))
+
+# عرض الجدول بشكل مرتب
+if not df_results.empty:
+    st.write("### 📋 قائمة الحضور والاعتذار:")
+    # ترتيب الجدول ليظهر الأحدث أولاً
+    st.dataframe(df_results[['الاسم', 'الحالة', 'الوقت']], use_container_width=True, hide_index=True)
+else:
+    st.info("لا يوجد مسجلين حتى الآن.")
 
 # --- 7. لوحة التحكم ---
 with st.expander("⚙️ لوحة التحكم"):
     pw = st.text_input("كلمة المرور", type="password")
     if pw == "1234":
         if st.button("تصفير السجل لمناسبة جديدة"):
-            if os.path.exists('results.csv'): os.remove('results.csv')
-            st.rerun()
+            if os.path.exists('results.csv'): 
+                os.remove('results.csv')
+                st.rerun()
         st.write("---")
         nh = st.text_input("التاريخ الهجري (مثلاً: 1447-10-25)", value=settings['h_date'])
         nw = st.text_input("الوقت", value=settings['time'])
