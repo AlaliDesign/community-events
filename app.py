@@ -3,14 +3,14 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- 1. إعدادات الصفحة والشعار ---
+# --- 1. إعدادات الصفحة والشعار (متناسب مع الجوال) ---
 st.set_page_config(
     page_title="مناسبات آل علي", 
     layout="centered", 
     page_icon="logo.png" 
 )
 
-# --- 2. التنسيق المتناسب مع الجوال (Mobile Optimized) ---
+# --- 2. التنسيق المتطور (Mobile Friendly) ---
 st.markdown("""
     <style>
     .main { background-color: #080808; }
@@ -19,45 +19,44 @@ st.markdown("""
     .main-title { 
         color: #D4AF37; 
         text-align: center; 
-        font-size: 1.4em !important; /* حجم خط أصغر للجوال */
+        font-size: 1.3em !important; 
         font-weight: bold;
-        padding: 10px 5px;
-        line-height: 1.4;
+        padding: 5px;
+        margin-bottom: 15px;
     }
     
-    /* تنسيق بطاقات الإحصائيات - حجم مرن */
+    /* تنسيق بطاقات الإحصائيات - صف واحد للجوال */
     [data-testid="stMetric"] {
         background-color: #fdfdfd; 
         border: 1px solid #D4AF37;
-        padding: 10px !important;
-        border-radius: 10px;
+        padding: 5px !important;
+        border-radius: 8px;
     }
     
-    /* تصغير أرقام العدادات لتظهر في صف واحد بالعرض */
     [data-testid="stMetricValue"] { 
         color: #1a1a1a !important; 
-        font-size: 1.1em !important; /* تصغير الرقم قليلاً */
+        font-size: 1.1em !important; 
         font-weight: bold !important; 
     }
     [data-testid="stMetricLabel"] { 
         color: #444 !important; 
-        font-size: 0.8em !important; /* تصغير المسمى */
+        font-size: 0.75em !important; 
     }
 
-    /* أزرار الحضور - ارتفاع مناسب للإبهام */
+    /* أزرار الحضور والاعتذار */
     .stButton>button { 
         border-radius: 10px; border: 1.5px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
-        font-weight: bold; width: 100%; height: 3em;
+        font-weight: bold; width: 100%; height: 3.2em;
         font-size: 0.9em;
     }
     
-    /* تصغير حجم خانة البحث */
-    .stSelectbox label { font-size: 0.9em !important; color: #D4AF37 !important; }
+    /* رسالة النجاح والتحذير مصغرة */
+    .stAlert { padding: 5px !important; font-size: 0.85em !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. وظائف البيانات ---
+# --- 3. وظائف معالجة البيانات ---
 EXCEL_FILE = 'names.xlsx'
 CSV_RESULTS = 'community_events_results.csv'
 
@@ -70,13 +69,12 @@ def load_results():
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
 # --- 4. واجهة التطبيق ---
-# عرض الشعار بحجم صغير يتناسب مع الجوال
+# عرض الشعار الصغير في الأعلى
 if os.path.exists("logo.png"):
-    col_logo, _ = st.columns([1, 4])
+    col_logo, _ = st.columns([1, 3])
     with col_logo:
-        st.image("logo.png", width=70)
+        st.image("logo.png", width=65)
 
-# العنوان بالكليشة الجديدة والحجم المصغر
 st.markdown("<div class='main-title'>⚜️ مناسبات جماعة آل علي بالرياض ⚜️</div>", unsafe_allow_html=True)
 
 if os.path.exists(EXCEL_FILE):
@@ -102,24 +100,35 @@ if os.path.exists(EXCEL_FILE):
                 st.warning("تم الاعتذار")
                 st.rerun()
 
-    # --- 5. ملخص الحضور (مصغر للجوال) ---
+    # --- 5. قسم النتائج والإحصائيات ---
     st.divider()
     df_final = load_results()
     
     if not df_final.empty:
+        # عدادات الحضور (تظهر في صف واحد على الجوال)
         c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric("المسجلين", len(df_final))
-        with c2:
-            st.metric("✅ حاضر", len(df_final[df_final['الحالة'] == 'حاضر']))
-        with c3:
-            st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
+        with c1: st.metric("المسجلين", len(df_final))
+        with c2: st.metric("✅ حاضر", len(df_final[df_final['الحالة'] == 'حاضر']))
+        with c3: st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
 
-        with st.expander("👁️ كشف الأسماء"):
+        # استعراض الكشف
+        with st.expander("👁️ عرض كشف الأسماء"):
             st.dataframe(df_final, use_container_width=True, hide_index=True)
-            csv = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📥 تحميل التقرير", data=csv, file_name="report.csv")
-else:
-    st.error("تنبيه: ملف names.xlsx غير موجود.")
+            csv_data = df_final.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("📥 تحميل التقرير (Excel)", data=csv_data, file_name="report.csv")
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.7em;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+        # --- 6. مركز التحكم السري (لأبي فيصل فقط) ---
+        st.write("---")
+        with st.expander("⚙️ إعدادات الإدارة (تصفير المناسبة)"):
+            st.write("استخدم هذا الخيار لمسح الأسماء بعد انتهاء المناسبة تماماً.")
+            if st.button("🗑️ حذف جميع المسجلين الآن"):
+                if os.path.exists(CSV_RESULTS):
+                    os.remove(CSV_RESULTS)
+                    st.success("تم تصفير البيانات بنجاح!")
+                    st.rerun()
+    else:
+        st.info("💡 بانتظار بدء تسجيل الحضور للمناسبة.")
+else:
+    st.error("ملف names.xlsx غير موجود.")
+
+st.markdown("<p style='text-align:center; color:#555; font-size:0.7em; margin-top:30px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
