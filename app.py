@@ -6,33 +6,28 @@ import os
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق المتطور (توسيط وتكبير الشعار) ---
+# --- 2. التنسيق (التوسيط المطلق وتكبير الخط) ---
 st.markdown("""
     <style>
     .main { background-color: #080808; }
     
-    /* تنسيق الحاوية لتوسيط الشعار تماماً */
-    .logo-wrapper {
+    /* توسيط الشعار بشكل قسري */
+    .stImage {
         display: flex;
         justify-content: center;
-        align-items: center;
-        padding: 20px 0;
-    }
-    
-    .centered-logo {
-        width: 150px !important; /* حجم أكبر وواضح */
-        border-radius: 10px;
+        margin-bottom: -10px;
     }
 
     .main-title { 
         color: #D4AF37; 
         text-align: center; 
-        font-size: 1.5em !important; /* تكبير العنوان قليلاً */
+        font-size: 1.5em !important; 
         font-weight: bold;
-        margin-top: 10px;
+        margin-top: 15px;
         margin-bottom: 25px;
     }
     
+    /* تنسيق العدادات */
     [data-testid="stMetric"] {
         background-color: #fdfdfd; 
         border: 1px solid #D4AF37;
@@ -41,6 +36,8 @@ st.markdown("""
         text-align: center;
     }
     
+    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.2em !important; font-weight: bold !important; }
+
     .stButton>button { 
         border-radius: 10px; border: 1.5px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
@@ -74,25 +71,27 @@ def load_results():
 if 'input_key' not in st.session_state:
     st.session_state.input_key = 0
 
-# --- 4. عرض الشعار والعنوان في المنتصف ---
+# --- 4. واجهة العرض (الشعار والعناوين) ---
 
-# عرض الشعار باستخدام كود HTML لضمان التوسيط الكامل
-# ملاحظة: تأكد من وجود ملف باسم logo.png في نفس المجلد على GitHub
-if os.path.exists("logo.png"):
-    st.image("logo.png", width=150) # استخدام الدالة المباشرة أضمن للظهور
-else:
-    st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
+# عرض الشعار في المنتصف باستخدام حاوية الأعمدة لضمان التوسيط
+col_a, col_logo, col_b = st.columns([1, 2, 1])
+with col_logo:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=140)
+    else:
+        st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
 
 st.markdown("<div class='main-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
 
-# --- باقي الكود البرمجي (كما هو لضمان استقرار الإضافة والحذف) ---
+# تحميل الأسماء
 if 'names' not in st.session_state:
     st.session_state.names = load_names()
 
 names_list = st.session_state.names
 
+# --- 5. تسجيل الحضور ---
 if names_list:
-    selected_name = st.selectbox("🔍 ابحث عن اسمك:", options=["-- اختر من القائمة --"] + names_list)
+    selected_name = st.selectbox("🔍 ابحث عن اسمك لتسجيل الحضور:", options=["-- اختر من القائمة --"] + names_list)
 
     if selected_name != "-- اختر من القائمة --":
         col1, col2 = st.columns(2)
@@ -112,20 +111,31 @@ if names_list:
                 st.rerun()
 
 st.divider()
-df_final = load_results()
-if not df_final.empty:
-    c1, c2, c3 = st.columns(3)
-    with c1: st.metric("المسجلين", len(df_final))
-    with c2: st.metric("✅ حاضر", len(df_final[df_final['الحالة'] == 'حاضر']))
-    with c3: st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
 
+# --- 6. الإحصائيات (عداد الفرز العام) ---
+df_results = load_results()
+total_in_list = len(names_list) # إجمالي المضافين في الإكسل
+total_responded = len(df_results) # من سجلوا (حضور أو اعتذار)
+
+st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 إحصائيات المناسبة</h3>", unsafe_allow_html=True)
+
+# العدادات الأربعة
+c1, c2 = st.columns(2)
+with c1: st.metric("إجمالي المضافين (القائمة)", total_in_list)
+with c2: st.metric("إجمالي المتفاعلين", total_responded)
+
+c3, c4 = st.columns(2)
+with c3: st.metric("✅ عدد الحضور", len(df_results[df_results['الحالة'] == 'حاضر']))
+with c4: st.metric("❌ عدد المعتذرين", len(df_results[df_results['الحالة'] == 'معتذر']))
+
+# --- 7. الإدارة ---
 with st.expander("⚙️ إعدادات الإدارة"):
     admin_pass = st.text_input("الرقم السري:", type="password")
     if admin_pass == "1234":
         tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         with tab1:
             new_person = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
-            if st.button("حفظ"):
+            if st.button("حفظ الاسم"):
                 if new_person:
                     clean_n = new_person.strip()
                     if clean_n not in st.session_state.names:
@@ -134,15 +144,15 @@ with st.expander("⚙️ إعدادات الإدارة"):
                         st.session_state.input_key += 1
                         st.rerun()
         with tab2:
-            to_del = st.selectbox("حذف:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("تأكيد الحذف"):
+            to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
+            if st.button("تأكيد الحذف النهائي"):
                 if to_del != "-- اختر --":
                     st.session_state.names.remove(to_del)
                     save_names(st.session_state.names)
                     st.rerun()
         with tab3:
-            if st.button("تصفير الكل"):
+            if st.button("تصفير كشف الحضور"):
                 if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
                 st.rerun()
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.8em;'>تصميم: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#555; font-size:0.8em; margin-top:50px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
