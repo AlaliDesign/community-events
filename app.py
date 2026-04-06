@@ -5,10 +5,24 @@ import os
 import json
 import urllib.parse
 from ummalqura.hijri_date import HijriDate
+from PIL import Image
 
-# --- 1. إعدادات الصفحة والأيقونة (السيفين والنخلة) ---
-# استخدمت إيموجي يرمز للهوية الوطنية كأيقونة للمتصفح
-st.set_page_config(page_title="مناسبات آل علي", page_icon="🌴")
+# --- 1. إعدادات الصفحة والأيقونة (الشعار الخاص) ---
+# التأكد من وجود ملف الصورة في المشروع
+icon_image_path = 'logo.png'
+
+if os.path.exists(icon_image_path):
+    try:
+        # تحميل الصورة لاستخدامها كأيقونة للمتصفح (بدل القارب)
+        icon_img = Image.open(icon_image_path)
+        st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon=icon_img)
+    except:
+        # إيموجي احتياطي فخم في حال حدث خطأ بملف الصورة
+        st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
+else:
+    # إيموجي احتياطي فخم إذا لم يتم رفع الملف بعد
+    st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
+
 
 def load_data():
     names = []
@@ -23,9 +37,9 @@ def load_data():
         try: results = pd.read_csv('results.csv', encoding='utf-8-sig')
         except: pass
         
-    # قيم افتراضية عشان الكليشة ما تختفي
+    # قيم افتراضية للكليشة لضمان ثبات الهيكل
     settings = {
-        "title": "مناسبات جماعة آل علي بالرياض", 
+        "title": "مناسبات جماعة آل علي في الرياض", 
         "h_date": "لم يحدد", 
         "time": "حدد الوقت", 
         "location": "حدد الموقع", 
@@ -54,12 +68,13 @@ st.markdown("""
         background-color: #FFFDF5; border: 1px double #D4AF37;
         border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;
     }
-    /* تنسيق الأزرار */
+    /* تنسيق الأزرار الذهبية للروابط */
     div.stLinkButton > a {
         background-color: #D4AF37 !important; color: white !important;
         border-radius: 10px !important; width: 100% !important; display: block !important;
         font-weight: bold !important; text-decoration: none !important;
     }
+    /* تنسيق أزرار تأكيد الحضور والاعتذار */
     .stButton>button { 
         border-radius: 10px; border: 2px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; font-weight: bold; width: 100%;
@@ -69,12 +84,19 @@ st.markdown("""
 
 all_names, df_results, settings = load_data()
 
-# --- 3. عرض الكليشة الثابتة ---
-st.markdown(f"<h3 style='text-align:center; color:#D4AF37;'>{settings['title']}</h3>", unsafe_allow_html=True)
+# --- 3. عرض الواجهة الثابتة (الكليشة) ---
 
-# الشعار (سيفين ونخلة) - وضعته كصورة تعبيرية علوية
-st.markdown("<div style='text-align:center; font-size:40px;'>🌴<br>⚔️</div>", unsafe_allow_html=True)
+# أولاً: الشعار الفخم في المنتصف
+if os.path.exists(icon_image_path):
+    st.image(icon_image_path, width=150, use_column_width=False)
+else:
+    # شعار تعبيري إذا لم ترفع الصورة بعد
+    st.markdown("<div style='text-align:center; font-size:40px; color:#D4AF37;'>🌴⚔️</div>", unsafe_allow_html=True)
 
+# ثانياً: العنوان الثابت بالاسم الجديد
+st.markdown(f"<h3 style='text-align:center; color:#1a1a1a; font-weight:bold;'>مناسبات جماعة آل علي في الرياض</h3>", unsafe_allow_html=True)
+
+# ثالثاً: بطاقة المناسبة الثابتة
 st.markdown(f"""
     <div class="event-card">
         <p style="font-size:1.2em;">📅 <b>التاريخ الهجري:</b> {settings['h_date']}</p>
@@ -82,13 +104,13 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# منطق أزرار التذكير والخرائط
+# روابط التذكير والخرائط (تظهر فقط عند وجود بيانات صحيحة)
 if settings['h_date'] != "لم يحدد":
     try:
         hy, hm, hd = map(int, settings['h_date'].split('-'))
         g_date = HijriDate(hy, hm, hd).get_georgiandate()
         g_str = g_date.strftime('%Y%m%d')
-        t_q = urllib.parse.quote(settings['title'])
+        t_q = urllib.parse.quote("مناسبات جماعة آل علي في الرياض")
         cal_url = f"https://www.google.com/calendar/render?action=TEMPLATE&text={t_q}&dates={g_str}T170000Z/{g_str}T210000Z"
         st.link_button("🔔 أضف تذكير صوتي بجوالك", cal_url, use_container_width=True)
     except: pass
@@ -96,7 +118,7 @@ if settings['h_date'] != "لم يحدد":
 if settings['map_url']:
     st.link_button("📍 موقع المناسبة (خرائط جوجل)", settings['map_url'], use_container_width=True)
 
-# --- 4. سجل الحضور (يظل ثابتاً دائماً) ---
+# --- 4. سجل الحضور (ثابت دائماً) ---
 st.divider()
 st.markdown("### 📝 سجل حضورك")
 search = st.text_input("🔍 ابحث عن اسمك:", placeholder="اكتب اسمك هنا...")
@@ -118,7 +140,7 @@ if selected != "-- اختر --":
             st.warning("تم تسجيل اعتذارك")
             st.rerun()
 
-# --- 5. الإحصائيات ---
+# --- 5. الإحصائيات (ثابتة دائماً) ---
 st.divider()
 st.markdown("<h4 style='text-align:center;'>📊 الإحصائيات</h4>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
@@ -133,7 +155,8 @@ with st.expander("⚙️ لوحة التحكم"):
             if os.path.exists('results.csv'): os.remove('results.csv')
             st.rerun()
         st.write("---")
-        nt = st.text_input("عنوان المناسبة", value=settings['title'])
+        # تم تثبيت العنوان في الكود، خانة الإدخال هذه لعرضه فقط
+        st.text_input("عنوان المناسبة (ثابت)", value="مناسبات جماعة آل علي في الرياض", disabled=True)
         nh = st.text_input("التاريخ الهجري (مثال: 1447-10-25)", value=settings['h_date'])
         nw = st.text_input("الوقت", value=settings['time'])
         nl = st.text_input("الموقع", value=settings['location'])
@@ -141,7 +164,8 @@ with st.expander("⚙️ لوحة التحكم"):
         
         if st.button("حفظ ونشر المناسبة"):
             with open('settings.json', 'w', encoding='utf-8') as f:
-                json.dump({"title":nt, "h_date":nh, "time":nw, "location":nl, "map_url":nm}, f, ensure_ascii=False)
+                # نحفظ العنوان الثابت دائماً
+                json.dump({"title":"مناسبات جماعة آل علي في الرياض", "h_date":nh, "time":nw, "location":nl, "map_url":nm}, f, ensure_ascii=False)
             st.rerun()
 
 st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
