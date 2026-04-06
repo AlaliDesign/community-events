@@ -39,16 +39,18 @@ def load_results():
         except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# --- 4. واجهة التطبيق الرئيسية ---
+# --- 4. تهيئة الذاكرة (Session State) ---
+if 'names' not in st.session_state:
+    st.session_state.names = load_names()
+if 'input_key' not in st.session_state:
+    st.session_state.input_key = 0 # هذا هو المفتاح السحري للتفريغ
+
+# --- 5. واجهة التطبيق ---
 if os.path.exists("logo.png"):
     col_logo, _ = st.columns([1, 3])
     with col_logo: st.image("logo.png", width=65)
 
 st.markdown("<div class='main-title'>⚜️ مناسبات جماعة آل علي بالرياض ⚜️</div>", unsafe_allow_html=True)
-
-# تحميل الأسماء في الذاكرة
-if 'names' not in st.session_state:
-    st.session_state.names = load_names()
 
 names_list = st.session_state.names
 
@@ -72,7 +74,6 @@ if names_list:
                 st.warning("تم الاعتذار")
                 st.rerun()
 
-# --- 5. قسم النتائج والإحصائيات ---
 st.divider()
 df_final = load_results()
 
@@ -81,47 +82,42 @@ if not df_final.empty:
     with c1: st.metric("المسجلين", len(df_final))
     with c2: st.metric("✅ حاضر", len(df_final[df_final['الحالة'] == 'حاضر']))
     with c3: st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
-    
-    with st.expander("👁️ عرض كشف الأسماء"):
+    with st.expander("👁️ عرض الكشف"):
         st.dataframe(df_final, use_container_width=True, hide_index=True)
 
-# --- 6. مركز تحكم الإدارة (الإصدار المستقر) ---
+# --- 6. مركز تحكم الإدارة (الإصدار العبقري للتفريغ) ---
 st.write("---")
 with st.expander("⚙️ إعدادات الإدارة"):
-    admin_pass = st.text_input("أدخل الرقم السري للإدارة:", type="password")
+    admin_pass = st.text_input("رقم الإدارة السري:", type="password")
     
     if admin_pass == "1234":
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة اسم", "🗑️ حذف اسم", "🧹 تصفير"])
+        tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         
         with tab1:
-            # طريقة الإضافة المستقرة (بدون فورم لتجنب تضارب التحديث)
-            new_person = st.text_input("اكتب الاسم الجديد بالكامل:", key="input_field")
-            if st.button("حفظ الاسم الجديد"):
+            # هنا نستخدم المفتاح المتغير input_key لضمان التفريغ
+            new_person = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
+            
+            if st.button("حفظ الآن"):
                 if new_person and new_person not in st.session_state.names:
                     st.session_state.names.append(new_person)
                     save_names(st.session_state.names)
-                    st.success(f"تمت إضافة {new_person} بنجاح!")
-                    # التحديث الآن يتم بسلاسة
+                    # تغيير المفتاح فوراً لمسح الحقل
+                    st.session_state.input_key += 1 
+                    st.success(f"تمت إضافة {new_person}")
                     st.rerun()
                 elif new_person in st.session_state.names:
-                    st.warning("الاسم موجود مسبقاً!")
+                    st.warning("موجود مسبقاً!")
         
         with tab2:
-            name_to_del = st.selectbox("اختر الاسم المراد حذفه:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("تأكيد حذف الاسم"):
+            name_to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
+            if st.button("تأكيد الحذف"):
                 if name_to_del != "-- اختر --":
                     st.session_state.names.remove(name_to_del)
                     save_names(st.session_state.names)
-                    st.error(f"تم حذف {name_to_del}")
                     st.rerun()
                     
         with tab3:
-            if st.button("🗑️ تصفير قائمة الحضور"):
+            if st.button("🗑️ تصفير الحضور"):
                 if os.path.exists(CSV_RESULTS):
                     os.remove(CSV_RESULTS)
-                    st.success("تم التصفير")
                     st.rerun()
-    elif admin_pass != "":
-        st.error("الرقم السري خطأ")
-
-st.markdown("<p style='text-align:center; color:#555; font-size:0.7em;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
