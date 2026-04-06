@@ -8,139 +8,144 @@ import json
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered")
 
-# --- 2. وظائف البيانات ---
-def load_settings():
-    if os.path.exists('settings.json'):
-        try:
-            with open('settings.json', 'r', encoding='utf-8') as f: return json.load(f)
-        except: pass
-    return {"title": "مناسبات جماعة آل علي", "date": "قريباً", "time": "8:00 مساءً", "location": "الرياض", "map_url": ""}
+# --- 2. وظائف الملفات (تأكد من وجودها) ---
+SETTINGS_FILE = 'settings.json'
+NAMES_FILE = 'names.xlsx'
+RESULTS_FILE = 'results.csv'
 
-def save_settings(s):
-    with open('settings.json', 'w', encoding='utf-8') as f: json.dump(s, f, ensure_ascii=False, indent=4)
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+    return {"title": "مناسبات آل علي", "date": "لم يحدد", "time": "لم يحدد", "location": "لم يحدد", "map_url": ""}
 
 def load_names():
-    if os.path.exists('names.xlsx'):
-        try:
-            df = pd.read_excel('names.xlsx')
-            return sorted(df.iloc[:, 0].dropna().unique().tolist())
+    if os.path.exists(NAMES_FILE):
+        try: return sorted(pd.read_excel(NAMES_FILE).iloc[:, 0].dropna().astype(str).unique().tolist())
         except: return []
     return []
 
-def save_names(n):
-    pd.DataFrame(n, columns=['الاسم']).to_excel('names.xlsx', index=False)
+def load_results():
+    if os.path.exists(RESULTS_FILE):
+        try: return pd.read_csv(RESULTS_FILE, encoding='utf-8-sig')
+        except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
+    return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# --- 3. التنسيق الملكي ---
+# --- 3. التنسيق الملكي المحسن (وضوح المربعات) ---
 st.markdown("""
     <style>
     #MainMenu, footer, header {visibility: hidden;}
-    .stApp { background-color: #F5F5DC; }
+    .stApp { background-color: #FDFCF0; }
+    
     .main .block-container {
-        border: 2px solid #D4AF37; padding: 15px !important; 
+        border: 2px solid #D4AF37; padding: 20px !important; 
         border-radius: 15px; background-color: #ffffff;
-        max-width: 95% !important; margin: auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: auto;
     }
-    input { font-size: 16px !important; }
+    
+    /* تنسيق مربعات الإحصائيات (العداد الكلي) */
+    [data-testid="stMetric"] {
+        background-color: #FFFDF5 !important;
+        border: 1px solid #D4AF37 !important;
+        border-radius: 10px !important;
+        padding: 10px !important;
+        text-align: center !important;
+    }
+    [data-testid="stMetricLabel"] { color: #1a1a1a !important; font-size: 1.1em !important; font-weight: bold !important; }
+    [data-testid="stMetricValue"] { color: #D4AF37 !important; }
+
+    .event-card {
+        background-color: #FFFDF5; border: 1px double #D4AF37;
+        border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;
+    }
+    
     .stButton>button { 
         border-radius: 10px; border: 2px solid #D4AF37; 
         background-color: #1a1a1a; color: #D4AF37; 
         font-weight: bold; width: 100%; height: 3.5em;
     }
-    .event-card {
-        background-color: #FFFDF5; border: 1px double #D4AF37;
-        border-radius: 12px; padding: 12px; margin: 10px 0; text-align: center;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# استدعاء البيانات
-if 'names' not in st.session_state:
-    st.session_state.names = load_names()
-    st.session_state.input_key = 0
-
+# استدعاء البيانات الحالية
 current_settings = load_settings()
+all_names = load_names()
+df_results = load_results()
 
 # --- 4. واجهة العرض ---
-st.markdown("<h2 style='text-align:center; color:#1a1a1a;'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</h2>", unsafe_allow_html=True)
 st.markdown(f"<h3 style='text-align:center; color:#D4AF37;'>{current_settings['title']}</h3>", unsafe_allow_html=True)
 
 st.markdown(f"""
     <div class="event-card">
-        <p>📅 <b>التاريخ:</b> {current_settings['date']}</p>
-        <p>⏰ <b>الوقت:</b> {current_settings['time']}</p>
+        <p>📅 <b>التاريخ:</b> {current_settings['date']} | ⏰ <b>الوقت:</b> {current_settings['time']}</p>
         <p>📍 <b>الموقع:</b> {current_settings['location']}</p>
-        <a href="{current_settings['map_url']}" target="_blank" style="color:#D4AF37; font-weight:bold; text-decoration:none;">📍 اضغط لفتح الموقع في الخرائط</a>
+        <a href="{current_settings['map_url']}" target="_blank" style="color:#D4AF37; font-weight:bold;">📍 فتح الموقع في الخرائط</a>
     </div>
 """, unsafe_allow_html=True)
 
-# --- 5. نظام البحث والقائمة المدمج ---
-st.write("### 📝 سجل حضورك")
+st.divider()
 
-# حقل البحث (يفتح لوحة المفاتيح فوراً)
-search_input = st.text_input("🔍 ابحث عن اسمك هنا أولاً:", placeholder="اكتب اسمك للبحث...")
+# --- 5. نظام البحث والتسجيل ---
+st.markdown("### 📝 سجل حضورك")
 
-# فلترة الأسماء بناءً على البحث
-if search_input:
-    filtered_list = [n for n in st.session_state.names if search_input in n]
+# حقل البحث
+search_query = st.text_input("🔍 ابحث عن اسمك هنا أولاً:", placeholder="اكتب اسمك...")
+
+# فلترة الأسماء
+if search_query:
+    filtered_names = [n for n in all_names if search_query in n]
 else:
-    filtered_list = st.session_state.names
+    filtered_names = all_names
 
-# عرض القائمة المنسدلة (دائماً موجودة)
-selected_name = st.selectbox(
-    "ثم اختر اسمك من هذه القائمة:",
-    options=["-- اختر الاسم --"] + filtered_list,
-    index=0
-)
+# اختيار الاسم من القائمة المفلترة
+selected_user = st.selectbox("👇 ثم اختر اسمك من القائمة أدناه:", options=["-- اختر --"] + filtered_names)
 
-if selected_name != "-- اختر الاسم --":
+if selected_user != "-- اختر --":
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✅ تأكيد الحضور"):
-            res = pd.read_csv('results.csv') if os.path.exists('results.csv') else pd.DataFrame(columns=['الاسم','الحالة','الوقت'])
-            new_data = pd.DataFrame({'الاسم':[selected_name], 'الحالة':['حاضر'], 'الوقت':[datetime.now().strftime("%I:%M %p")]})
-            pd.concat([res[res['الاسم'] != selected_name], new_data], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
-            st.success(f"تم تسجيل حضورك يا {selected_name}")
+            new_row = pd.DataFrame({'الاسم': [selected_user], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+            # دمج البيانات مع حذف القديم لنفس الاسم لمنع التكرار
+            updated_df = pd.concat([df_results[df_results['الاسم'] != selected_user], new_row], ignore_index=True)
+            updated_df.to_csv(RESULTS_FILE, index=False, encoding='utf-8-sig')
+            st.success(f"تم تسجيل حضورك يا {selected_user}")
             st.rerun()
     with col2:
         if st.button("❌ تقديم اعتذار"):
-            res = pd.read_csv('results.csv') if os.path.exists('results.csv') else pd.DataFrame(columns=['الاسم','الحالة','الوقت'])
-            new_data = pd.DataFrame({'الاسم':[selected_name], 'الحالة':['معتذر'], 'الوقت':[datetime.now().strftime("%I:%M %p")]})
-            pd.concat([res[res['الاسم'] != selected_name], new_data], ignore_index=True).to_csv('results.csv', index=False, encoding='utf-8-sig')
+            new_row = pd.DataFrame({'الاسم': [selected_user], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
+            updated_df = pd.concat([df_results[df_results['الاسم'] != selected_user], new_row], ignore_index=True)
+            updated_df.to_csv(RESULTS_FILE, index=False, encoding='utf-8-sig')
             st.warning("تم تسجيل اعتذارك")
             st.rerun()
 
 st.divider()
 
-# --- 6. لوحة التحكم ---
+# --- 6. الإحصائيات (التي كانت لا تظهر) ---
+st.markdown("<h3 style='text-align:center; color:#1a1a1a;'>📊 الإحصائيات الحالية</h3>", unsafe_allow_html=True)
+c1, c2, c3 = st.columns(3)
+with c1: st.metric("إجمالي الأسماء", len(all_names))
+with c2: st.metric("حاضر ✅", len(df_results[df_results['الحالة'] == 'حاضر']))
+with c3: st.metric("معتذر ❌", len(df_results[df_results['الحالة'] == 'معتذر']))
+
+# --- 7. لوحة التحكم ---
 with st.expander("⚙️ لوحة تحكم المشرف"):
-    if st.text_input("كلمة المرور", type="password") == "1234":
-        tab1, tab2, tab3 = st.tabs(["إعدادات المناسبة", "إدارة الأسماء", "تصفير السجل"])
-        with tab1:
-            nt = st.text_input("العنوان:", value=current_settings['title'])
-            nd = st.text_input("التاريخ:", value=current_settings['date'])
-            nw = st.text_input("الوقت:", value=current_settings['time'])
-            nl = st.text_input("الموقع:", value=current_settings['location'])
-            nm = st.text_input("رابط الخريطة:", value=current_settings['map_url'])
+    pw = st.text_input("كلمة المرور:", type="password")
+    if pw == "1234":
+        t1, t2 = st.tabs(["إدارة المناسبة", "تصفير السجل"])
+        with t1:
+            # نموذج لتغيير البيانات
+            new_t = st.text_input("العنوان:", value=current_settings['title'])
+            new_d = st.text_input("التاريخ:", value=current_settings['date'])
+            new_time = st.text_input("الوقت:", value=current_settings['time'])
+            new_l = st.text_input("الموقع:", value=current_settings['location'])
+            new_m = st.text_input("رابط الخريطة:", value=current_settings['map_url'])
             if st.button("حفظ الإعدادات"):
-                save_settings({"title":nt, "date":nd, "time":nw, "location":nl, "map_url":nm})
+                with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                    json.dump({"title":new_t, "date":new_d, "time":new_time, "location":new_l, "map_url":new_m}, f, ensure_ascii=False)
                 st.rerun()
-        with tab2:
-            new_n = st.text_input("اسم جديد:", key=f"add_{st.session_state.input_key}")
-            if st.button("إضافة"):
-                if new_n and new_n not in st.session_state.names:
-                    st.session_state.names.append(new_n.strip())
-                    save_names(sorted(st.session_state.names))
-                    st.session_state.input_key += 1
-                    st.rerun()
-            del_n = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("حذف"):
-                if del_n != "-- اختر --":
-                    st.session_state.names.remove(del_n)
-                    save_names(st.session_state.names)
-                    st.rerun()
-        with tab3:
-            if st.button("مسح السجل بالكامل"):
-                if os.path.exists('results.csv'): os.remove('results.csv')
+        with t2:
+            if st.button("مسح جميع تسجيلات الحضور"):
+                if os.path.exists(RESULTS_FILE): os.remove(RESULTS_FILE)
                 st.rerun()
 
 st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>صقر العقارات 2026</p>", unsafe_allow_html=True)
