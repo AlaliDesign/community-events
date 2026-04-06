@@ -2,21 +2,26 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import base64
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق المتطور (توسيط الشعار، دائرة مثالية، برواز، وراحة العين) ---
+# --- 2. وظيفة تحويل الصورة لرابط مضمون ---
+def get_image_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
+
+# --- 3. التنسيق الملكي المطور (توسيط ودائرة مثالية) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
-
-    /* تغيير خلفية التطبيق للون كريمي مريح للعين */
-    .stApp {
-        background-color: #F5F5DC; 
-    }
     
-    /* تصميم البرواز الملكي المتجاوب مع الجوال */
+    #MainMenu, footer, header {visibility: hidden;}
+
+    .stApp { background-color: #F5F5DC; }
     .main .block-container {
         border: 2px solid #D4AF37;
         padding: 20px !important;
@@ -27,66 +32,32 @@ st.markdown("""
         max-width: 95% !important;
     }
 
-    /* البسملة */
-    .bismillah {
-        font-family: 'Amiri', serif;
-        font-size: 2em;
-        color: #1a1a1a;
-        text-align: center;
-        margin-bottom: 5px;
-    }
-
-    /* --- التوسيط القسري للشعار وجعله دائرة مثالية --- */
-    .centered-logo-container {
+    .bismillah { font-family: 'Amiri', serif; font-size: 2em; color: #1a1a1a; text-align: center; margin-bottom: 5px; }
+    
+    /* توسيط الشعار وجعله دائرة مثالية */
+    .logo-frame {
         display: flex;
-        justify-content: center; /* توسيط أفقي */
-        align-items: center;    /* توسيط عمودي إذا لزم الأمر */
+        justify-content: center;
+        align-items: center;
         width: 100%;
-        margin: 15px 0;
+        margin: 20px 0;
     }
-
-    /* تنسيق الشعار ليكون دائرة مثالية */
     .circular-logo {
-        width: 160px !important;  /* عرض ثابت */
-        height: 160px !important; /* طول ثابت مطابق للعرض */
-        border-radius: 50% !important; /* جعل الزوايا دائرة كاملة */
-        border: 4px solid #D4AF37 !important; /* إطار ذهبي فخم */
-        object-fit: cover !important; /* ضمان عدم تمدد الصورة بالداخل */
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+        width: 150px !important;
+        height: 150px !important;
+        border-radius: 50% !important; /* دائرة كاملة */
+        border: 4px solid #D4AF37;
+        object-fit: cover;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
-    /* العنوان الرئيسي */
-    .main-title { 
-        color: #D4AF37; 
-        text-align: center; 
-        font-size: 1.4em !important; 
-        font-family: 'Tajawal', sans-serif;
-        font-weight: bold;
-        margin-bottom: 25px;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 10px;
-    }
-    
-    /* تنسيق العدادات الإحصائية للجوال */
-    [data-testid="stMetric"] {
-        background-color: #FFFDF5; 
-        border: 1px solid #D4AF37;
-        border-radius: 10px;
-        text-align: center;
-    }
-    
-    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.3em !important; font-weight: bold !important; }
-
-    /* أزرار الحضور */
-    .stButton>button { 
-        border-radius: 10px; border: 2px solid #D4AF37; 
-        background-color: #1a1a1a; color: #D4AF37; 
-        font-weight: bold; width: 100%; height: 3.5em;
-    }
+    .main-title { color: #D4AF37; text-align: center; font-size: 1.4em !important; font-family: 'Tajawal', sans-serif; font-weight: bold; margin-bottom: 25px; }
+    [data-testid="stMetric"] { background-color: #FFFDF5; border: 1px solid #D4AF37; border-radius: 10px; text-align: center; }
+    .stButton>button { border-radius: 10px; border: 2px solid #D4AF37; background-color: #1a1a1a; color: #D4AF37; font-weight: bold; width: 100%; height: 3.5em; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. إدارة البيانات ---
+# --- 4. إدارة البيانات ---
 EXCEL_FILE = 'names.xlsx'
 CSV_RESULTS = 'community_events_results.csv'
 
@@ -111,47 +82,42 @@ def load_results():
 if 'input_key' not in st.session_state:
     st.session_state.input_key = 0
 
-# --- 4. واجهة العرض ---
-
+# --- 5. واجهة العرض ---
 st.markdown("<div class='bismillah'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>", unsafe_allow_html=True)
 
-# التوسيط المطلق والدائرة المثالية للشعار
-if os.path.exists("logo.png"):
-    st.markdown("""
-        <div class="centered-logo-container">
-            <img src="app/static/logo.png" class="circular-logo" alt="Logo">
+# عرض الشعار بالرابط المباشر لضمان الظهور والتوسط
+img_b64 = get_image_base64("logo.png")
+if img_b64:
+    st.markdown(f"""
+        <div class="logo-frame">
+            <img src="data:image/png;base64,{img_b64}" class="circular-logo">
         </div>
         """, unsafe_allow_html=True)
 else:
-    # خيار بديل في حال لم يرفع الملف بعد
     st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
 
 st.markdown("<div class='main-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
 
-# تحميل الأسماء في الذاكرة لتكون القائمة دائماً محدثة
 if 'names' not in st.session_state:
     st.session_state.names = load_names()
-
 names_list = st.session_state.names
 
-# --- 5. حقل البحث وتسجيل الحضور ---
+# --- 6. حقل البحث وتسجيل الحضور ---
 if names_list:
-    selected_name = st.selectbox("🔍 ابحث عن اسمك:", options=["-- اختر من القائمة --"] + names_list)
+    selected_name = st.selectbox("🔍 ابحث عن اسمك في القائمة:", options=["-- اختر من هنا أو اكتب اسمك للبحث --"] + names_list, label_visibility="collapsed")
 
-    if selected_name != "-- اختر من القائمة --":
+    if selected_name != "-- اختر من هنا أو اكتب اسمك للبحث --":
         col1, col2 = st.columns(2)
         with col1:
             if st.button("✅ تأكيد الحضور"):
                 res = load_results()
-                # إضافة تسجيل الحضور مع استبعاد الاعتذار السابق إن وجد
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.success(f"تم تأكيد حضورك يا {selected_name.split()[0]}")
+                st.success("تم تأكيد حضورك")
                 st.rerun()
         with col2:
             if st.button("❌ تقديم اعتذار"):
                 res = load_results()
-                # إضافة تسجيل الاعتذار مع استبعاد الحضور السابق إن وجد
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
                 st.warning("تم تسجيل اعتذارك")
@@ -159,57 +125,42 @@ if names_list:
 
 st.divider()
 
-# --- 6. إحصائيات الفرز العام ---
+# --- 7. إحصائيات الفرز العام ---
 df_results = load_results()
 total_all = len(names_list)
 total_present = len(df_results[df_results['الحالة'] == 'حاضر'])
 total_absent = len(df_results[df_results['الحالة'] == 'معتذر'])
 
 st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 إحصائيات الفرز العام</h3>", unsafe_allow_html=True)
+c1, c2, c3 = st.columns(3)
+with c1: st.metric("المسجلين", total_all)
+with c2: st.metric("✅ حاضر", total_present)
+with c3: st.metric("❌ معتذر", total_absent)
 
-# الصف الأول: الإجماليات
-c1, c2 = st.columns(2)
-with c1: st.metric("إجمالي القائمة", total_all)
-with c2: st.metric("إجمالي المتفاعلين", len(df_results))
-
-# الصف الثاني: التفاصيل
-c3, c4 = st.columns(2)
-with c3: st.metric("✅ عدد الحاضرين", total_present)
-with c4: st.metric("❌ عدد المعتذرين", total_absent)
-
-# --- 7. لوحة التحكم للإدارة ---
+# --- 8. لوحة التحكم ---
 with st.expander("⚙️ لوحة تحكم المشرف"):
-    admin_pass = st.text_input("أدخل الرقم السري للإدارة:", type="password")
-    
+    admin_pass = st.text_input("كلمة المرور:", type="password")
     if admin_pass == "1234":
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة اسم", "🗑️ حذف اسم", "🧹 تصفير"])
-        
+        tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         with tab1:
-            # استخدام المفتاح الديناميكي لتفريغ الحقل بعد الإضافة
-            new_person = st.text_input("الاسم الجديد بالكامل:", key=f"ins_{st.session_state.input_key}")
-            
-            if st.button("حفظ وإضافة الاسم"):
-                if new_person:
-                    clean_name = new_person.strip()
-                    if clean_name not in st.session_state.names:
-                        st.session_state.names.append(clean_name)
-                        st.session_state.names = sorted(st.session_state.names)
-                        save_names(st.session_state.names)
-                        st.session_state.input_key += 1
-                        st.rerun()
-        
+            new_p = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
+            if st.button("حفظ"):
+                if new_p and new_p.strip() not in st.session_state.names:
+                    st.session_state.names.append(new_p.strip())
+                    st.session_state.names = sorted(st.session_state.names)
+                    save_names(st.session_state.names)
+                    st.session_state.input_key += 1
+                    st.rerun()
         with tab2:
-            name_to_del = st.selectbox("حذف اسم من القائمة الرئيسية:", options=["-- اختر --"] + st.session_state.names)
+            to_del = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
             if st.button("تأكيد الحذف"):
-                if name_to_del != "-- اختر --":
-                    st.session_state.names.remove(name_to_del)
+                if to_del != "-- اختر --":
+                    st.session_state.names.remove(to_del)
                     save_names(st.session_state.names)
                     st.rerun()
-                    
         with tab3:
-            if st.button("🗑️ تصفير قائمة الحضور للمناسبة القادمة"):
-                if os.path.exists(CSV_RESULTS):
-                    os.remove(CSV_RESULTS)
-                    st.rerun()
+            if st.button("تصفير القائمة"):
+                if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
+                st.rerun()
 
 st.markdown("<p style='text-align:center; color:#888; font-size:0.8em; margin-top:30px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
