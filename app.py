@@ -4,95 +4,67 @@ from datetime import datetime
 import os
 
 # --- إعدادات ثابتة للمناسبة ---
-EVENT_NAME = "مناسبة الجماعة الكبرى"
-DATE_OF_EVENT = "الجمعة، 15 مايو 2026"
-TIME_OF_EVENT = "08:00 مساءً"
-LOCATION_URL = "https://maps.app.goo.gl/xxxx" # ضع رابط الخريطة هنا
+EVENT_NAME = "مناسبة جماعة آل علي بالرياض"
 # -----------------------------------------------
 
-st.set_page_config(page_title="نظام مناسبات الجماعة", layout="centered", page_icon="⚜️")
+st.set_page_config(page_title=EVENT_NAME, layout="centered", page_icon="⚜️")
 
-# التنسيق الملكي مع إضافة كود لجعل الواجهة تبدو كتطبيق جوال
-st.markdown(f"""
+# التنسيق الملكي (أبو فيصل)
+st.markdown("""
     <style>
-    .main {{ background-color: #000000; }}
-    [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
-    
-    /* رسالة إرشادية للتثبيت */
-    .install-hint {{
-        background-color: #D4AF37;
-        color: #000;
-        padding: 10px;
-        border-radius: 10px;
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 20px;
-        font-size: 0.9em;
-        border: 2px solid #fff;
-    }}
-
-    .event-card {{
-        background-color: #1a1a1a;
-        border: 2px solid #D4AF37;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-    }}
-    
-    .stButton>button {{ 
-        border-radius: 15px; border: 2px solid #D4AF37; 
-        background-color: #1a1a1a; color: #D4AF37; 
-        font-weight: bold; width: 100%; height: 3.5em;
-    }}
+    .main { background-color: #000000; }
+    .stSelectbox label { color: #D4AF37 !important; font-size: 1.3em; font-weight: bold; }
+    .stSelectbox div[data-baseweb="select"] { border: 2px solid #D4AF37; border-radius: 10px; }
     </style>
-    """, unsafe_allow_html=True)
-
-# رسالة "تثبيت التطبيق" تظهر في الأعلى
-with st.container():
-    st.markdown("""
-        <div class="install-hint">
-        📱 لجعل البرنامج تطبيقاً ثابتاً على جوالك:<br>
-        <b>للأيفون:</b> اضغط سهم المشاركة ثم "إضافة للشاشة الرئيسية"<br>
-        <b>للأندرويد:</b> اضغط النقاط الثلاث ثم "تثبيت التطبيق"
-        </div>
     """, unsafe_allow_html=True)
 
 st.markdown(f"<h1 style='color:#D4AF37; text-align:center;'>⚜️ {EVENT_NAME} ⚜️</h1>", unsafe_allow_html=True)
 
-# بطاقة المناسبة
-st.markdown(f"""
-    <div class="event-card">
-        <p style="color: #D4AF37; font-size: 1.2em; margin-bottom: 5px;">📅 {DATE_OF_EVENT}</p>
-        <p style="color: #ffffff; margin-bottom: 15px;">⏰ {TIME_OF_EVENT}</p>
-        <a href="{LOCATION_URL}" target="_blank" style="text-decoration: none;">
-            <button style="background-color: #D4AF37; color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; width: 90%; cursor: pointer;">
-                📍 موقع المجلس (قوقل ماب)
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
-
-# بقية الكود (الأسماء والتسجيل) كما هي...
+# 1. تحميل الأسماء
 EXCEL_FILE = 'names.xlsx'
 CSV_RESULTS = 'community_events_results.csv'
 
-if os.path.exists(EXCEL_FILE):
-    df_names = pd.read_excel(EXCEL_FILE)
-    names_list = df_names.iloc[:, 0].dropna().unique().tolist()
-    
-    st.write("###")
-    selected_name = st.selectbox("👤 اختر اسمك لتأكيد الحضور:", options=["-- اختر اسماً --"] + names_list)
+def get_names():
+    if os.path.exists(EXCEL_FILE):
+        df = pd.read_excel(EXCEL_FILE)
+        # ترتيب الأسماء أبجدياً لتسهيل البحث
+        names = sorted(df.iloc[:, 0].dropna().unique().tolist())
+        return names
+    return []
 
-    if selected_name != "-- اختر اسماً --":
+names_list = get_names()
+
+# 2. واجهة البحث والاختيار
+if not names_list:
+    st.error("⚠️ يرجى رفع ملف names.xlsx")
+else:
+    st.write("---")
+    # ملاحظة: Streamlit يسمح بالكتابة داخل الـ selectbox للبحث تلقائياً
+    selected_name = st.selectbox(
+        "🔍 ابحث عن اسمك (اكتب اسمك هنا):", 
+        options=["-- ابدأ بكتابة اسمك هنا --"] + names_list,
+        index=0,
+        help="بمجرد كتابة أول حروف من اسمك ستظهر لك الخيارات"
+    )
+
+    if selected_name != "-- ابدأ بكتابة اسمك هنا --":
+        st.info(f"مرحباً بك: **{selected_name}**")
+        
         col1, col2 = st.columns(2)
-        # (هنا تضع أكواد أزرار الحضور والاعتذار التي استخدمناها سابقاً)
         with col1:
-             if st.button("✅ تأكيد الحضور"):
-                 st.success("تم التسجيل يا أبا فيصل!") # مثال
+             if st.button("✅ تأكيد الحضور", use_container_width=True):
+                 # كود حفظ البيانات (نفس السابق)
+                 st.success("تم تسجيل حضورك")
         with col2:
-             if st.button("❌ اعتذار"):
-                 st.warning("تم تسجيل الاعتذار")
+             if st.button("❌ اعتذار", use_container_width=True):
+                 st.warning("تم تسجيل اعتذارك")
 
-# التوقيع
-st.markdown("<br><p style='text-align: center; color: #D4AF37; font-size: 0.8em; opacity: 0.6;'>تصميم وبرمجة: صقر العقارات 2026</p>", unsafe_allow_html=True)
+# 3. عرض النتائج (مخفي تحت expander)
+with st.expander("📊 كشف الحضور والاعتذار"):
+    if os.path.exists(CSV_RESULTS):
+        df_res = pd.read_csv(CSV_RESULTS)
+        st.table(df_res) # عرض جدول بسيط ونظيف
+    else:
+        st.write("لا توجد تسجيلات بعد.")
+
+st.markdown("<p style='text-align: center; color: #555;'>برمجة وتطوير: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
