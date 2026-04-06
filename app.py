@@ -13,7 +13,7 @@ EXCEL_FILE = 'names.xlsx'
 CSV_RESULTS = 'community_events_results.csv'
 SETTINGS_FILE = 'settings.json'
 
-# --- 3. وظائف إدارة البيانات ---
+# --- 3. وظائف النظام ---
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -54,33 +54,51 @@ def load_results():
         except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# --- 4. التنسيق الملكي (CSS) ---
+# --- 4. التنسيق الملكي المحسن (لحل مشاكل الجوال) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
+    
+    /* إخفاء القوائم الافتراضية */
     #MainMenu, footer, header {visibility: hidden;}
+    
     .stApp { background-color: #F5F5DC; }
+    
+    /* تحسين البرواز والحواف */
     .main .block-container {
-        border: 2px solid #D4AF37; padding: 10px 20px !important; 
+        border: 2px solid #D4AF37; padding: 15px !important; 
         border-radius: 15px; background-color: #ffffff;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 10px auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 5px auto;
+        max-width: 95% !important;
     }
-    .bismillah { font-family: 'Amiri', serif; font-size: 2.2em; color: #1a1a1a; text-align: center; }
-    .logo-frame { display: flex; justify-content: center; margin: -10px 0 10px 0; }
-    .circular-logo { width: 220px !important; height: 220px !important; border-radius: 50%; object-fit: cover; border: 2px solid #D4AF37; }
-    .main-title { color: #D4AF37; text-align: center; font-size: 1.7em !important; font-family: 'Tajawal', sans-serif; font-weight: bold; }
+    
+    .bismillah { font-family: 'Amiri', serif; font-size: 2.2em; color: #1a1a1a; text-align: center; margin-bottom: 10px; }
+    .logo-frame { display: flex; justify-content: center; margin-bottom: 10px; }
+    .circular-logo { width: 200px !important; height: 200px !important; border-radius: 50%; object-fit: cover; border: 2px solid #D4AF37; }
+    .main-title { color: #D4AF37; text-align: center; font-size: 1.5em !important; font-family: 'Tajawal', sans-serif; font-weight: bold; }
+    
+    /* بطاقة الدعوة */
     .event-card {
         background-color: #FFFDF5; border: 1px double #D4AF37;
-        border-radius: 15px; padding: 15px; margin: 15px 0; text-align: center;
+        border-radius: 12px; padding: 12px; margin: 10px 0; text-align: center;
     }
-    .event-info { font-family: 'Tajawal', sans-serif; color: #1a1a1a; font-size: 1.1em; margin: 5px 0; }
+    .event-info { font-family: 'Tajawal', sans-serif; color: #1a1a1a; font-size: 1.0em; margin: 3px 0; }
     .map-btn {
-        background-color: #D4AF37; color: white !important; padding: 8px 20px; 
+        background-color: #D4AF37; color: white !important; padding: 6px 15px; 
         border-radius: 20px; text-decoration: none; display: inline-block; 
-        margin-top: 10px; font-weight: bold; font-size: 0.9em;
+        margin-top: 8px; font-weight: bold; font-size: 0.85em;
     }
-    [data-testid="stMetric"] { background-color: #FFFDF5; border: 1px solid #D4AF37; border-radius: 10px; }
-    .stButton>button { border-radius: 10px; border: 2px solid #D4AF37; background-color: #1a1a1a; color: #D4AF37; font-weight: bold; width: 100%; }
+    
+    /* تحسين ظهور الحقول على الجوال */
+    input, select, .stSelectbox {
+        font-size: 16px !important; /* يمنع الزووم التلقائي في الآيفون */
+    }
+    
+    .stButton>button { 
+        border-radius: 10px; border: 2px solid #D4AF37; 
+        background-color: #1a1a1a; color: #D4AF37; 
+        font-weight: bold; width: 100%; height: 3.5em;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -91,7 +109,7 @@ if 'names' not in st.session_state:
 
 current_settings = load_settings()
 
-# --- 5. واجهة العرض الرئيسية ---
+# --- 5. واجهة العرض ---
 st.markdown("<div class='bismillah'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>", unsafe_allow_html=True)
 
 img_b64 = get_image_base64("logo.png")
@@ -100,94 +118,90 @@ if img_b64:
 
 st.markdown(f"<div class='main-title'>{current_settings['title']}</div>", unsafe_allow_html=True)
 
-# عرض بطاقة المناسبة
 st.markdown(f"""
     <div class="event-card">
         <div class="event-info">📅 <b>التاريخ:</b> {current_settings['date']}</div>
         <div class="event-info">⏰ <b>الوقت:</b> {current_settings['time']}</div>
         <div class="event-info">📍 <b>الموقع:</b> {current_settings['location']}</div>
-        {"<a href='"+current_settings['map_url']+"' target='_blank' class='map-btn'>📍 موقع المناسبة (خرائط جوجل)</a>" if current_settings['map_url'] else ""}
+        {"<a href='"+current_settings['map_url']+"' target='_blank' class='map-btn'>📍 خرائط جوجل</a>" if current_settings['map_url'] else ""}
     </div>
 """, unsafe_allow_html=True)
 
-# --- 6. حقل البحث وتسجيل الحضور ---
-st.subheader("📝 تسجيل الحضور والاعتذار")
+# --- 6. اختيار الاسم (البحث) ---
+st.write("### 🔍 ابحث عن اسمك")
+# استخدام selectbox مع ميزة البحث المفعلة افتراضياً
 selected_name = st.selectbox(
-    "ابحث عن اسمك في القائمة:",
-    options=["-- ابدأ بكتابة اسمك هنا --"] + st.session_state.names,
-    index=0,
-    help="اكتب اسمك للبحث بسرعة"
+    "اختر من القائمة (يمكنك كتابة اسمك للبحث):",
+    options=["-- اختر الاسم --"] + st.session_state.names,
+    index=0
 )
 
-if selected_name != "-- ابدأ بكتابة اسمك هنا --":
+# إذا لم يجد اسمه، نترك له خيار الإضافة اليدوية (اختياري)
+if selected_name == "-- اختر الاسم --":
+    st.info("💡 إذا لم تجد اسمك، يمكنك إضافته من لوحة التحكم بالأسفل أو التواصل مع المنظم.")
+
+if selected_name != "-- اختر الاسم --":
+    st.success(f"الاسم المختار: {selected_name}")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✅ تأكيد الحضور"):
             res = load_results()
             new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
             pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-            st.success(f"حياك الله يا {selected_name}، تم تسجيل حضورك")
+            st.balloons()
+            st.success("تم الحفظ بنجاح")
             st.rerun()
     with col2:
         if st.button("❌ تقديم اعتذار"):
             res = load_results()
             new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
             pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-            st.warning(f"تم قبول اعتذارك يا {selected_name}، نراك في مناسبات قادمة")
+            st.warning("تم تسجيل الاعتذار")
             st.rerun()
 
 st.divider()
 
 # --- 7. الإحصائيات ---
 df_results = load_results()
-total_all = len(st.session_state.names)
 total_present = len(df_results[df_results['الحالة'] == 'حاضر'])
 total_absent = len(df_results[df_results['الحالة'] == 'معتذر'])
 
 c1, c2, c3 = st.columns(3)
-with c1: st.metric("المسجلين", total_all)
+with c1: st.metric("المسجلين", len(st.session_state.names))
 with c2: st.metric("حاضر", total_present)
 with c3: st.metric("معتذر", total_absent)
 
-# --- 8. لوحة التحكم المتقدمة ---
-with st.expander("⚙️ لوحة تحكم المشرف"):
-    password = st.text_input("كلمة المرور:", type="password")
-    if password == "1234":
-        t1, t2, t3, t4 = st.tabs(["📅 إعدادات المناسبة", "➕ إضافة أسماء", "🗑️ إدارة الأسماء", "🧹 تصفير"])
-        
+# --- 8. لوحة التحكم ---
+with st.expander("⚙️ الإدارة"):
+    pw = st.text_input("كلمة المرور:", type="password")
+    if pw == "1234":
+        t1, t2, t3 = st.tabs(["📅 الإعدادات", "👥 الأسماء", "📊 السجل"])
         with t1:
-            st.write("تعديل بيانات الدعوة")
-            new_title = st.text_input("عنوان المناسبة:", value=current_settings['title'])
-            new_date = st.text_input("التاريخ (مثلاً: الجمعة 20 مايو):", value=current_settings['date'])
-            new_time = st.text_input("الوقت (مثلاً: 8:00 مساءً):", value=current_settings['time'])
-            new_loc = st.text_input("اسم الموقع:", value=current_settings['location'])
-            new_map = st.text_input("رابط جوجل ماب:", value=current_settings['map_url'])
-            if st.button("حفظ إعدادات المناسبة"):
+            new_title = st.text_input("العنوان:", value=current_settings['title'])
+            new_date = st.text_input("التاريخ:", value=current_settings['date'])
+            new_time = st.text_input("الوقت:", value=current_settings['time'])
+            new_loc = st.text_input("الموقع:", value=current_settings['location'])
+            new_map = st.text_input("رابط الخريطة:", value=current_settings['map_url'])
+            if st.button("حفظ التغييرات"):
                 save_settings({"title": new_title, "date": new_date, "time": new_time, "location": new_loc, "map_url": new_map})
-                st.success("تم تحديث بيانات المناسبة بنجاح!")
                 st.rerun()
-
         with t2:
-            new_name = st.text_input("أضف اسماً جديداً للقائمة:", key=f"add_{st.session_state.input_key}")
-            if st.button("إضافة الآن"):
-                if new_name and new_name.strip() not in st.session_state.names:
-                    st.session_state.names.append(new_name.strip())
+            n_name = st.text_input("إضافة اسم جديد:")
+            if st.button("إضافة"):
+                if n_name and n_name not in st.session_state.names:
+                    st.session_state.names.append(n_name.strip())
                     save_names(sorted(st.session_state.names))
-                    st.session_state.input_key += 1
                     st.rerun()
-        
-        with t3:
-            del_name = st.selectbox("اختر اسماً لحذفه:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("حذف الاسم"):
-                if del_name != "-- اختر --":
-                    st.session_state.names.remove(del_name)
+            del_n = st.selectbox("حذف اسم:", options=["-- اختر --"] + st.session_state.names)
+            if st.button("حذف"):
+                if del_n != "-- اختر --":
+                    st.session_state.names.remove(del_n)
                     save_names(st.session_state.names)
                     st.rerun()
-
-        with t4:
-            if st.button("مسح سجل الحضور والاعتذار"):
+        with t3:
+            if st.button("تصفير سجل الحضور"):
                 if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
-                st.success("تم تصفير السجل بنجاح")
                 st.rerun()
+            st.dataframe(df_results)
 
-st.markdown("<p style='text-align:center; color:#888; font-size:0.8em; margin-top:30px;'>تصميم: محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#888; font-size:0.8em; margin-top:20px;'>محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
