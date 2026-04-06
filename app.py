@@ -60,13 +60,6 @@ st.markdown("""
         background-color: #FFFDF5; border: 1px double #D4AF37;
         border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;
     }
-    /* تنسيق العدادات العلوية */
-    .metric-container {
-        display: flex; justify-content: space-around; margin-bottom: 20px;
-    }
-    .metric-box {
-        text-align: center; padding: 10px; border-radius: 10px; width: 30%; color: white; font-weight: bold;
-    }
     div.stLinkButton > a {
         background-color: #D4AF37 !important; color: white !important;
         border-radius: 10px !important; width: 100% !important; display: block !important;
@@ -91,7 +84,7 @@ with col_m:
 
 st.markdown("<h3 style='text-align:center; color:#1a1a1a; font-weight:bold;'>مناسبات جماعة آل علي في الرياض</h3>", unsafe_allow_html=True)
 
-# --- 5. العدادات الملونة الجديدة ---
+# --- 5. العدادات الملونة ---
 h_count = len(df_results[df_results['الحالة'] == 'حاضر'])
 m_count = len(df_results[df_results['الحالة'] == 'معتذر'])
 t_count = len(all_names) if all_names else "يدوي"
@@ -162,18 +155,18 @@ if selected and selected != "-- اختر --":
             st.warning(f"تم تسجيل اعتذارك")
             st.rerun()
 
-# --- 7. عرض الجدول مع تمييز الألوان ---
+# --- 7. عرض الجدول (تصحيح الخطأ البرمجي) ---
 st.divider()
 if not df_results.empty:
-    st.write("### 📋 قائمة الحضور والاعتذار:")
+    st.markdown("### 📋 قائمة الحضور والاعتذار")
     
-    # وظيفة لتمويل المعتذر باللون الأحمر
     def color_status(val):
-        color = '#ffcccc' if val == 'معتذر' else '#ccffcc'
-        return f'background-color: {color}'
+        if val == 'معتذر':
+            return 'background-color: #ffcccc; color: #990000; font-weight: bold;'
+        return 'background-color: #ccffcc; color: #006600;'
 
-    # تطبيق التنسيق على الجدول
-    styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.applymap(color_status, subset=['الحالة'])
+    # استخدام map بدلاً من applymap لتجنب الخطأ في النسخ الجديدة
+    styled_df = df_results[['الاسم', 'الحالة', 'الوقت']].style.map(color_status, subset=['الحالة'])
     
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
 else:
