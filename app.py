@@ -15,7 +15,9 @@ if os.path.exists(icon_path):
     try:
         img = Image.open(icon_path)
         st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon=img)
-        # كود إضافي لإجبار الجوال على التعرف على الأيقونة عند الحفظ
+      st.markdown(f'<link rel="apple-touch-icon" href="https://i.ibb.co/Pv2TzzCj/logo.png" alt="logo">', unsafe_allow_html=True)
+
+  # كود إضافي لإجبار الجوال على التعرف على الأيقونة عند الحفظ
         st.markdown(f'<link rel="apple-touch-icon" href="{icon_path}"><link rel="shortcut icon" href="{icon_path}">', unsafe_allow_html=True)
     except:
         st.set_page_config(page_title="مناسبات جماعة آل علي", page_icon="⚔️")
