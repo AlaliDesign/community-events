@@ -3,25 +3,23 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- 1. إعدادات الصفحة والشعار ---
-st.set_page_config(
-    page_title="مناسبات آل علي", 
-    layout="centered", 
-    page_icon="logo.png"
-)
+# --- 1. إعدادات الصفحة ---
+st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق (تحديث هام لإخفاء شعار Streamlit) ---
+# --- 2. التنسيق الملكي المريح للعين وإخفاء شعار المنصة ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
     
-    /* --- حل مشكلة الشعار: إخفاء شعار Streamlit والقائمة الافتراضية --- */
-    #MainMenu {visibility: hidden;} /* إخفاء قائمة الثلاث نقاط */
-    footer {visibility: hidden;}    /* إخفاء التذيل بالكامل بما فيه شعار القارب */
-    header {visibility: hidden;}    /* إخفاء الهيدر العلوي الافتراضي */
-    
-    /* بقية التنسيقات الملكية للمناسبة */
+    /* إخفاء شعار Streamlit والقوائم الافتراضية */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* خلفية مريحة للعين */
     .stApp { background-color: #F5F5DC; }
+    
+    /* البرواز الملكي المتجاوب */
     .main .block-container {
         border: 2px solid #D4AF37;
         padding: 20px !important;
@@ -31,12 +29,34 @@ st.markdown("""
         margin: 10px auto;
         max-width: 95% !important;
     }
+
     .bismillah { font-family: 'Amiri', serif; font-size: 2em; color: #1a1a1a; text-align: center; margin-bottom: 5px; }
+    
     .logo-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 10px; }
     .logo-wrapper img { width: 170px !important; height: auto; }
-    .main-title { color: #D4AF37; text-align: center; font-size: 1.4em !important; font-family: 'Tajawal', sans-serif; font-weight: bold; margin-bottom: 25px; }
-    [data-testid="stMetric"] { background-color: #FFFDF5; border: 1px solid #D4AF37; border-radius: 10px; text-align: center; }
-    .stButton>button { border-radius: 10px; border: 2px solid #D4AF37; background-color: #1a1a1a; color: #D4AF37; font-weight: bold; width: 100%; height: 3.5em; }
+
+    .main-title { 
+        color: #D4AF37; 
+        text-align: center; 
+        font-size: 1.4em !important; 
+        font-family: 'Tajawal', sans-serif;
+        font-weight: bold;
+        margin-bottom: 25px;
+    }
+    
+    /* تنسيق العدادات */
+    [data-testid="stMetric"] {
+        background-color: #FFFDF5; 
+        border: 1px solid #D4AF37;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .stButton>button { 
+        border-radius: 10px; border: 2px solid #D4AF37; 
+        background-color: #1a1a1a; color: #D4AF37; 
+        font-weight: bold; width: 100%; height: 3.5em;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -103,14 +123,24 @@ if names_list:
 
 st.divider()
 
-# --- 6. الإحصائيات ---
+# --- 6. إحصائيات الفرز العام (إعادة العدادات المفقودة) ---
 df_results = load_results()
 total_all = len(names_list)
 total_done = len(df_results)
+total_present = len(df_results[df_results['الحالة'] == 'حاضر'])
+total_absent = len(df_results[df_results['الحالة'] == 'معتذر'])
+
 st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 إحصائيات الفرز العام</h3>", unsafe_allow_html=True)
+
+# الصف الأول: الإجماليات
 c1, c2 = st.columns(2)
 with c1: st.metric("إجمالي القائمة", total_all)
 with c2: st.metric("إجمالي المتفاعلين", total_done)
+
+# الصف الثاني: التفاصيل (التي كانت مختفية)
+c3, c4 = st.columns(2)
+with c3: st.metric("✅ عدد الحاضرين", total_present)
+with c4: st.metric("❌ عدد المعتذرين", total_absent)
 
 # --- 7. لوحة التحكم ---
 with st.expander("⚙️ لوحة تحكم المشرف"):
@@ -118,28 +148,28 @@ with st.expander("⚙️ لوحة تحكم المشرف"):
     if admin_pass == "1234":
         tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         with tab1:
-            new_p = st.text_input("أدخل الاسم لإضافته:", key=f"ins_{st.session_state.input_key}")
-            if st.button("حفظ الاسم الجديد"):
+            new_p = st.text_input("أدخل الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
+            if st.button("حفظ الاسم"):
                 if new_p:
                     clean_n = new_p.strip()
                     if clean_n in st.session_state.names:
-                        st.error(f"⚠️ الاسم مضاف مسبقاً!")
+                        st.error("⚠️ الاسم موجود مسبقاً!")
                     else:
                         st.session_state.names.append(clean_n)
                         st.session_state.names = sorted(st.session_state.names)
                         save_names(st.session_state.names)
                         st.session_state.input_key += 1
-                        st.success(f"✅ تم حفظ الاسم بنجاح")
+                        st.success("✅ تم الحفظ بنجاح")
                         st.rerun()
         with tab2:
             to_del = st.selectbox("اختر اسماً لحذفه:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("حذف نهائي"):
+            if st.button("تأكيد الحذف"):
                 if to_del != "-- اختر --":
                     st.session_state.names.remove(to_del)
                     save_names(st.session_state.names)
                     st.rerun()
         with tab3:
-            if st.button("تفريغ كشف الحضور"):
+            if st.button("تصفير كشف المناسبة"):
                 if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
                 st.rerun()
 
