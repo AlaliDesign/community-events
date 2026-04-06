@@ -175,4 +175,4 @@ with st.expander("⚙️ إعدادات الإدارة"):
             st.session_state.has_voted = False
             st.rerun()
 
-st.markdown("<p style='text-align:center; color:#aaa; font-size:0.8em; margin-top:30px;'>تصميم محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#aaa; font-size:0.8em; margin-top:30px;'>تصميم محمد العلالي</p>", unsafe_allow_html=True)
