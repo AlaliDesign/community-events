@@ -3,64 +3,86 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# --- 1. إعدادات الصفحة والشعار (متناسب مع الجوال) ---
-st.set_page_config(
-    page_title="مناسبات آل علي", 
-    layout="centered", 
-    page_icon="logo_clean.png" # اعتماد الشعار الجديد والمفرغ
-)
+# --- 1. إعدادات الصفحة ---
+st.set_page_config(page_title="مناسبات آل علي", layout="centered", page_icon="logo.png")
 
-# --- 2. التنسيق (Mobile First - مع إزالة الخلفية البيضاء للشعار) ---
+# --- 2. التنسيق الجمالي (البرواز والخطوط) ---
 st.markdown("""
     <style>
-    .main { background-color: #080808; }
-    
-    /* تنسيق الشعار الملكي الكبير والمتوسط (برمجياً) */
-    .logo-frame {
-        display: flex;
-        justify-content: center; /* التوسط المطلق */
-        margin-top: 20px;
-        margin-bottom: 5px;
-        filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3)); /* ظل لتوضيح الشعار المفرغ */
+    /* استيراد خط النسخ العربي */
+    @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;700&display=swap');
+
+    .main { 
+        background-color: #f9f9f9; 
     }
-    .コミュニティ-logo {
-        width: 170px !important; /* حجم كبير وواضح */
-        background-color: transparent !important; /* إزالة أي خلفية بيضاء */
-        mix-blend-mode: multiply; /* دمج الألوان الغامقة للشعار مع الخلفية */
+    
+    /* تصميم البرواز المحيط بالتطبيق */
+    .block-container {
+        border: 3px double #D4AF37;
+        padding: 30px !important;
+        border-radius: 20px;
+        background-color: white;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
     }
 
-    /* العنوان الرئيسي المحدث */
-    .community-title { 
+    /* تنسيق البسملة */
+    .bismillah {
+        font-family: 'Amiri', serif;
+        font-size: 2.2em;
+        color: #1a1a1a;
+        text-align: center;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    /* توسيط وتكبير الشعار */
+    .logo-box {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+    .logo-box img {
+        width: 180px !important;
+        height: auto;
+    }
+
+    /* العنوان الرئيسي */
+    .main-title { 
         color: #D4AF37; 
         text-align: center; 
-        font-size: 1.5em !important; 
+        font-size: 1.6em !important; 
+        font-family: 'Tajawal', sans-serif;
         font-weight: bold;
-        margin-bottom: 25px;
-        line-height: 1.4;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
     }
     
-    /* تنسيق العدادات (Mobile Optimized) */
+    /* تنسيق العدادات الإحصائية */
     [data-testid="stMetric"] {
-        background-color: #fdfdfd; 
+        background-color: #fff9e6; 
         border: 1px solid #D4AF37;
-        padding: 8px !important;
-        border-radius: 8px;
+        padding: 15px !important;
+        border-radius: 12px;
         text-align: center;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
     }
     
-    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.25em !important; font-weight: bold !important; }
-    [data-testid="stMetricLabel"] { color: #444 !important; font-size: 0.8em !important; }
+    [data-testid="stMetricValue"] { color: #1a1a1a !important; font-size: 1.4em !important; font-weight: bold !important; }
 
-    /* أزرار الحضور - ارتفاع مناسب للإبهام */
+    /* أزرار الحضور */
     .stButton>button { 
-        border-radius: 10px; border: 1.5px solid #D4AF37; 
-        background-color: #1a1a1a; color: #D4AF37; 
-        font-weight: bold; width: 100%; height: 3.5em;
-        font-size: 0.9em;
+        border-radius: 12px; border: 2px solid #D4AF37; 
+        background-color: #1a1a1a; color: white; 
+        font-weight: bold; width: 100%; height: 3.8em;
+        transition: 0.3s;
     }
-    
-    /* رسالة النجاح والتحذير مصغرة לגوال */
-    .stAlert { padding: 5px !important; font-size: 0.85em !important; }
+    .stButton>button:hover {
+        background-color: #D4AF37;
+        color: black;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -86,32 +108,30 @@ def load_results():
         except: return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
     return pd.DataFrame(columns=['الاسم', 'الحالة', 'الوقت'])
 
-# تهيئة الذاكرة للمفتاح الديناميكي
 if 'input_key' not in st.session_state:
     st.session_state.input_key = 0
 
-# --- 4. واجهة التطبيق الرئيسية ---
+# --- 4. واجهة العرض (البسملة والشعار) ---
 
-# عرض الشعار الجديد والمفرغ (يجب أن ترفعه باسم logo_clean.png)
-if os.path.exists("logo_clean.png"):
-    st.markdown(f"""
-    <div class="logo-frame">
-        <img src="app/static/logo_clean.png" class="community-logo">
-    </div>
-    """, unsafe_allow_html=True)
+# البسملة بخط نسخ مرتب
+st.markdown("<div class='bismillah'>بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>", unsafe_allow_html=True)
+
+# عرض الشعار في المنتصف
+if os.path.exists("logo.png"):
+    st.markdown('<div class="logo-box">', unsafe_allow_html=True)
+    st.image("logo.png", width=180)
+    st.markdown('</div>', unsafe_allow_html=True)
 else:
-    # خيار بديل في حال لم يرفع الملف بعد
     st.markdown("<h1 style='text-align:center;'>⚜️</h1>", unsafe_allow_html=True)
 
-# العنوان بالكليشة المطلوبة
-st.markdown("<div class='community-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>مناسبات جماعة آل علي بالرياض</div>", unsafe_allow_html=True)
 
-# تحميل الأسماء في الذاكرة لتكون القائمة دائماً محدثة
+# تحميل الأسماء
 if 'names' not in st.session_state:
     st.session_state.names = load_names()
-
 names_list = st.session_state.names
 
+# --- 5. تسجيل الحضور ---
 if names_list:
     selected_name = st.selectbox("🔍 ابحث عن اسمك لتسجيل الحضور:", options=["-- اختر من القائمة --"] + names_list)
 
@@ -120,85 +140,62 @@ if names_list:
         with col1:
             if st.button("✅ تأكيد الحضور"):
                 res = load_results()
-                # إضافة تسجيل الحضور مع استبعاد الاعتذار السابق إن وجد
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['حاضر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.success(f"تم التأكيد")
+                st.success("تم تأكيد حضورك، حياك الله")
                 st.rerun()
         with col2:
-            if st.button("❌ اعتذار"):
+            if st.button("❌ تقديم اعتذار"):
                 res = load_results()
-                # إضافة تسجيل الاعتذار مع استبعاد الحضور السابق إن وجد
                 new_row = pd.DataFrame({'الاسم': [selected_name], 'الحالة': ['معتذر'], 'الوقت': [datetime.now().strftime("%I:%M %p")]})
                 pd.concat([res[res['الاسم'] != selected_name], new_row], ignore_index=True).to_csv(CSV_RESULTS, index=False, encoding='utf-8-sig')
-                st.warning("تم التسجيل")
+                st.warning("تم تسجيل اعتذارك، نراك في مناسبات قادمة")
                 st.rerun()
 
-# --- 5. قسم النتائج والإحصائيات (Mobile Friendly) ---
+st.write("") 
 st.divider()
-df_final = load_results()
 
-if not df_final.empty:
-    st.markdown("<h3 style='color:#D4AF37; text-align:center;'>📊 ملخص المناسبة</h3>", unsafe_allow_html=True)
-    # عدادات الحضور (تظهر في صف واحد على الجوال)
-    c1, c2, c3 = st.columns(3)
-    with c1: st.metric("المسجلين", len(df_final))
-    with c2: st.metric("✅ حاضر", len(df_final[df_final['الحالة'] == 'حاضر']))
-    with c3: st.metric("❌ معتذر", len(df_final[df_final['الحالة'] == 'معتذر']))
+# --- 6. إحصائيات الفرز العام (عادت للظهور) ---
+df_results = load_results()
+total_in_list = len(names_list)
+total_responded = len(df_results)
 
-    # استعراض الكشف
-    with st.expander("👁️ عرض كشف الأسماء التفصيلي"):
-        st.dataframe(df_final, use_container_width=True, hide_index=True)
-        csv_data = df_final.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📥 تحميل التقرير النهائي للمشرف", data=csv_data, file_name="report.csv")
+st.markdown("<h3 style='color:#D4AF37; text-align:center; font-family:Tajawal;'>📊 إحصائيات الفرز العام</h3>", unsafe_allow_html=True)
 
-# --- 6. مركز تحكم الإدارة (الإصدار العبقري للتفريغ) ---
-st.write("---")
-with st.expander("⚙️ إعدادات الإدارة المتطورة"):
-    admin_pass = st.text_input("أدخل الرقم السري للإدارة:", type="password")
-    
+# عرض العدادات بشكل مرتب وجمالي
+c1, c2 = st.columns(2)
+with c1: st.metric("إجمالي القائمة", total_in_list)
+with c2: st.metric("إجمالي المتفاعلين", total_responded)
+
+c3, c4 = st.columns(2)
+with c3: st.metric("✅ عدد الحاضرين", len(df_results[df_results['الحالة'] == 'حاضر']))
+with c4: st.metric("❌ عدد المعتذرين", len(df_results[df_results['الحالة'] == 'معتذر']))
+
+# --- 7. الإدارة ---
+with st.expander("⚙️ لوحة تحكم المشرف"):
+    admin_pass = st.text_input("الرقم السري:", type="password")
     if admin_pass == "1234":
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة اسم", "🗑️ حذف اسم", "🧹 تصفير"])
-        
+        tab1, tab2, tab3 = st.tabs(["➕ إضافة", "🗑️ حذف", "🧹 تصفير"])
         with tab1:
-            # هنا نستخدم المفتاح المتغير input_key لضمان التفريغ القاطع
-            new_person = st.text_input("الاسم الجديد بالكامل:", key=f"ins_{st.session_state.input_key}")
-            
-            if st.button("حفظ الاسم الجديد"):
-                # تنظيف النص من المسافات الزائدة
-                clean_name = new_person.strip()
-                if clean_name and clean_name not in st.session_state.names:
-                    # 1. تحديث القائمة في الذاكرة أولاً
-                    st.session_state.names.append(clean_name)
-                    st.session_state.names = sorted(st.session_state.names)
-                    
-                    # 2. الحفظ الفعلي في ملف الإكسل
-                    save_names(st.session_state.names)
-                    
-                    # 3. تحديث مفتاح الحقل للتفريغ الديناميكي
-                    st.session_state.input_key += 1
-                    
-                    st.success(f"تمت إضافة {clean_name}")
-                    st.rerun()
-                elif clean_name in st.session_state.names:
-                    st.warning("الاسم موجود مسبقاً!")
-        
+            new_person = st.text_input("الاسم الجديد:", key=f"ins_{st.session_state.input_key}")
+            if st.button("حفظ"):
+                if new_person:
+                    clean_n = new_person.strip()
+                    if clean_n not in st.session_state.names:
+                        st.session_state.names.append(clean_n)
+                        save_names(sorted(st.session_state.names))
+                        st.session_state.input_key += 1
+                        st.rerun()
         with tab2:
-            name_to_del = st.selectbox("حذف اسم نهائياً من القائمة الأساسية:", options=["-- اختر --"] + st.session_state.names)
-            if st.button("تأكيد حذف الاسم"):
-                if name_to_del != "-- اختر --":
-                    st.session_state.names.remove(name_to_del)
+            to_del = st.selectbox("اختر للحذف:", options=["-- اختر --"] + st.session_state.names)
+            if st.button("تأكيد الحذف"):
+                if to_del != "-- اختر --":
+                    st.session_state.names.remove(to_del)
                     save_names(st.session_state.names)
-                    st.error(f"تم حذف {name_to_del}")
                     st.rerun()
-                    
         with tab3:
-            if st.button("🗑️ تصفير قائمة الحضور للمناسبة القادمة"):
-                if os.path.exists(CSV_RESULTS):
-                    os.remove(CSV_RESULTS)
-                    st.success("تم التصفير")
-                    st.rerun()
-    elif admin_pass != "":
-        st.error("الرقم السري غير صحيح!")
+            if st.button("تصفير الكشف"):
+                if os.path.exists(CSV_RESULTS): os.remove(CSV_RESULTS)
+                st.rerun()
 
-st.markdown("<p style='text-align:center; color:#555; font-size:0.7em; margin-top:30px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#888; font-size:0.8em; margin-top:50px;'>تصميم وبرمجة: أبو فيصل للعقارات 2026</p>", unsafe_allow_html=True)
