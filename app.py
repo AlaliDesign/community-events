@@ -161,4 +161,4 @@ with st.expander("⚙️ لوحة التحكم"):
             st.success("تم الحفظ!")
             st.rerun()
 
-st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - صقر العقارات 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#888; font-size:0.7em;'>محمد العلالي - 2026</p>", unsafe_allow_html=True)
