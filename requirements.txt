@@ -1,1 +1,3 @@
 ummalqura
+pandas
+openpyxl
